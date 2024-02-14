@@ -1,6 +1,6 @@
 # CV Funk Module Collection for VCV Rack
 
-Explore the vast possibilities of modular synthesis with the CV Funk Module Collection, exclusively designed for VCV Rack. This meticulously crafted suite of modules unleashes a spectrum of innovative functionalities, each engineered to inject dynamic modulation, intricate sequencing, and immersive soundscapes into your musical creations. From the intricate steps of the Penta Sequencer to the nuanced control of the Envelope Array, each module stands as a testament to the power of modular synthesis, inviting you to delve into the depths of sound design.
+Explore the vast possibilities of modular synthesis with the CV Funk Module Collection, designed for VCV Rack. This suite of modules simplifies generating a complex spectrum of modulation from simple inputs. The modules are each carefully engineered to inject dynamic modulation, intricate sequencing, and immersive soundscapes into your musical creations. From the precise steps of the Penta Sequencer to the wide range of control of the Envelope Array, each module is designed to explore patch-programmable modular synthesis, inviting you to delve into the complexities of sound design with intuitive macro controls.
 
 ## Modules Overview
 
@@ -21,7 +21,7 @@ Simulate the mesmerizing movement of waves through a network of nodes with the W
 
 # Comparator Stepper Module
 
-The Comparator Stepper is an innovative module designed for VCV Rack, combining comparator functionalities with a step sequencer to provide dynamic control over signal processing.
+The Comparator Stepper combines comparator functionalities with a step sequencer to provide dynamic control over step signal generation. The stepper increments a voltage in a voltage window, and can be used to generate CV for fixed-interval scales of any width.
 
 ## Features
 
@@ -48,7 +48,7 @@ The Comparator Stepper is an innovative module designed for VCV Rack, combining 
 
 # Envelope Array Module
 
-The Envelope Array is an advanced envelope generator module for VCV Rack, designed to provide a wide array of dynamic control over amplitude shaping with multiple stages and complex modulation capabilities.
+The Envelope Array is an advanced envelope generator module for VCV Rack, designed to provide a wide array of dynamic control over amplitude shaping with six stages and complex modulation capabilities. The module can be self-patched to create a wide variety of modulations and is capable of self-oscillation when self-patched.
 
 ## Features
 
@@ -77,7 +77,7 @@ The Envelope Array is an advanced envelope generator module for VCV Rack, design
 
 # Penta Sequencer Module
 
-The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack, it offers some unique sequencing capabilities. The sequencer outputs all five of its notes simultaneously. 
+The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack, it offers some unique sequencing capabilities in a small footprint. The sequencer outputs all five of its notes simultaneously, and has a computed slew that adjusts dynamically to the trigger input. 
 
 ## Features
 
@@ -110,7 +110,7 @@ The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack
 
 # Wave Propagation Module
 
-The Wave Propagation module for VCV Rack simulates the propagation of waves through a medium, offering unique visual and auditory feedback based on the interactions within a network of nodes.
+The Wave Propagation module for VCV Rack simulates the propagation of waves through a medium, offering unique visual and auditory feedback based on the interactions within a network of nodes. Each of the 24 nodes can generate a decay envelope when stimulated, allowing for long decay tails and rhythmic synchronized pulsations.
 
 ## Features
 
