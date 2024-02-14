@@ -20,10 +20,7 @@ An envelope generation powerhouse, the Envelope Array offers unparalleled contro
 Simulate the mesmerizing movement of waves through a network of nodes with the Wave Propagation module. This module not only brings a visual spectacle to your rack but also offers a unique approach to spatial sound design and dynamic modulation, with 24 outputs representing the ebb and flow of energy through the network.
 
 
-<div style="display: flex;">
-  <img src="/img/ComparatorStepperLight.png" alt="Image 1" style="width: 50%;">
-  <img src="/img/ComparatorStepperDark.png" alt="Image 2" style="width: 50%;">
-</div>
+<img src="/img/ComparatorStepperLight.png" alt="Image 1" height="500"> <img src="/img/ComparatorStepperDark.png" alt="Image 2" height="500">
 
 # Comparator Stepper Module
 
@@ -52,6 +49,10 @@ The Comparator Stepper combines comparator functionalities with a step sequencer
 - **Melodic Sequencing**: Use the STEPPER OUTPUT to drive the pitch of an oscillator, crafting evolving melodic lines influenced by the comparator's operation.
 - **Counting**: Adjust the ratio between RANGE and STEP size to derive the number of desired steps. For example setting RANGE to 4V and STEP size to 1V will result in a comparator gate to be outputted once every four steps.
 
+
+<img src="/img/EnvelopeArrayLight.png" alt="Image 1" height="500"> <img src="/img/EnvelopeArrayDark.png" alt="Image 2" height="500">
+
+
 # Envelope Array Module
 
 The Envelope Array is an advanced envelope generator module for VCV Rack, designed to provide a wide array of dynamic control over amplitude shaping with six stages and complex modulation capabilities. The module can be self-patched to create a wide variety of modulations and is capable of self-oscillation when self-patched.
@@ -79,6 +80,7 @@ The Envelope Array is an advanced envelope generator module for VCV Rack, design
 - **Rhythmic Sequencing**: Connect the EOF outputs to sequencer reset inputs, using the envelope stages to define rhythmic patterns.
 
 
+<img src="/img/PentaSequencerLight.png" alt="Image 1" height="500"> <img src="/img/PentaSequencerDark.png" alt="Image 2" height="500">
 
 
 # Penta Sequencer Module
@@ -113,6 +115,7 @@ The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack
 
 - **Fixed Root: Reset the sequencer so that the bottom output is set to 1. Send gates to switch between Star/Circle/CCW/CW, the bottom output will always stay the same.
 
+<img src="/img/WavePropagationLight.png" alt="Image 1" height="400"> <img src="/img/WavePropagationDark.png" alt="Image 2" height="400">
 
 # Wave Propagation Module
 
