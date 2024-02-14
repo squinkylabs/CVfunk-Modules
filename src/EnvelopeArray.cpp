@@ -24,7 +24,9 @@ struct EnvelopeArray : Module {
         CURVE_ATTEN_PARAM,
         TIME1_ATTEN_PARAM,
         TIME6_ATTEN_PARAM,
-        PARAMS_LEN
+        TIME1_RANGE_BUTTON,  
+        TIME6_RANGE_BUTTON,  
+        PARAMS_LEN  
     };
     enum InputId {
         SLANT_INPUT,
@@ -54,21 +56,36 @@ struct EnvelopeArray : Module {
         EOF6_OUTPUT,
         OUTPUTS_LEN
     };
-	enum LightId {
-		_1_LIGHT,
-		_2_LIGHT,
-		_3_LIGHT,
-		_4_LIGHT,
-		_5_LIGHT,
-		_6_LIGHT,
-		_7_LIGHT,
-		_8_LIGHT,
-		_9_LIGHT,
-		_10_LIGHT,
-		_11_LIGHT,
-		_12_LIGHT,
-		LIGHTS_LEN
-	};
+    enum LightId {
+        _1_LIGHT,
+        _2_LIGHT,
+        _3_LIGHT,
+        _4_LIGHT,
+        _5_LIGHT,
+        _6_LIGHT,
+        _7_LIGHT,
+        _8_LIGHT,
+        _9_LIGHT,
+        _10_LIGHT,
+        _11_LIGHT,
+        _12_LIGHT,
+        TIME1_LED1_LIGHT,  
+        TIME1_LED2_LIGHT,  
+        TIME1_LED3_LIGHT,  
+        TIME6_LED1_LIGHT,  
+        TIME6_LED2_LIGHT,  
+        TIME6_LED3_LIGHT,  
+        LIGHTS_LEN  
+    };
+    
+	enum SpeedRange {
+        HIGH,
+        MID,
+        LOW
+    };
+
+    SpeedRange time1Range = MID;
+    SpeedRange time6Range = MID;
 
 // Define an array to store time variables
 float time_x[6] = {0.0f}; // Initialize all elements to 0.0f
@@ -83,8 +100,8 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configParam(SLANT_PARAM, -1.f, 1.f, 0.f, "Slant");
 		configParam(CURVE_PARAM, -1.f, 1.f, 0.f, "Curve");
-		configParam(TIME1_PARAM, 0.0f, 2.5f, 0.f, "First Width");
-		configParam(TIME6_PARAM, 0.0f, 2.5f, 0.f, "Last Width");
+		configParam(TIME1_PARAM, 0.0f, 1.0f, 0.4f, "First Width");
+		configParam(TIME6_PARAM, 0.0f, 1.0f, 0.6f, "Last Width");
 		configParam(SLANT_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
 		configParam(CURVE_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
 		configParam(TIME1_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
@@ -114,6 +131,30 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 	}
 
     void process(const ProcessArgs &args) override {	
+ 
+		 // Button logic for Time1
+		if (params[TIME1_RANGE_BUTTON].getValue() > 0) {
+			time1Range = static_cast<SpeedRange>((time1Range + 1) % 3);
+			params[TIME1_RANGE_BUTTON].setValue(0);
+		}
+
+		// Button logic for Time6
+		if (params[TIME6_RANGE_BUTTON].getValue() > 0) {
+			time6Range = static_cast<SpeedRange>((time6Range + 1) % 3);
+			params[TIME6_RANGE_BUTTON].setValue(0);
+		}
+
+		// Update LED lights for Time1
+		lights[TIME1_LED1_LIGHT].setBrightness(time1Range == HIGH ? 1.0f : 0.0f);
+		lights[TIME1_LED2_LIGHT].setBrightness(time1Range == MID ? 1.0f : 0.0f);
+		lights[TIME1_LED3_LIGHT].setBrightness(time1Range == LOW ? 1.0f : 0.0f);
+
+		// Update LED lights for Time6
+		lights[TIME6_LED1_LIGHT].setBrightness(time6Range == HIGH ? 1.0f : 0.0f);
+		lights[TIME6_LED2_LIGHT].setBrightness(time6Range == MID ? 1.0f : 0.0f);
+		lights[TIME6_LED3_LIGHT].setBrightness(time6Range == LOW ? 1.0f : 0.0f);
+
+ 
         // Read inputs and parameters...
         float slant = params[SLANT_PARAM].getValue();
         float curve = params[CURVE_PARAM].getValue();
@@ -133,9 +174,11 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 		// Clamp the curve and slant values after adding voltages
 		slant = clamp(slant, -1.0f, 1.0f); 
 		curve = clamp(curve, -1.0f, 1.0f);
-		time_x[0] = clamp(time_x[0], 0.0f, 2.5f);
-		time_x[5] = clamp(time_x[5], 0.0f, 2.5f);
+		time_x[0] = clamp(time_x[0], 0.0f, 1.0f);
+		time_x[5] = clamp(time_x[5], 0.0f, 1.0f);
 
+		time_x[0]*=1.05f; //extend the knob range by 50%, this way there is overlap between range sets
+		time_x[5]*=1.05f;
 
 		//Scale the time_x inputs to compensate for the increase in cycle time for different slants.
 		float slant_scalefactor = 2.5;
@@ -209,8 +252,16 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 			float_4 fallCV[4] = {};
 			float_4 cycle[4] = {};
 
-			// get parameters:
-			float minTime = .01f;  //This parameter sets the minimum rate of the envelope system.
+
+			// Map the speed range to minTime values
+			float minTimeValues[] = {0.001f, 0.03f, 0.9f}; // LOW, MID, HIGH
+			float minTime1 = minTimeValues[time1Range]; // minTime for Time1 based on its speed range
+			float minTime6 = minTimeValues[time6Range]; // minTime for Time6 based on its speed range
+
+			// Linear interpolation
+			float t = static_cast<float>(part) / 5.0f; // Normalized position between Time1 and Time6
+			float minTime = minTime1 * (1 - t) + minTime6 * t;
+
 
 			float_4 param_rise  = time_x[part] * (slant) * 10.0f;
 			float_4 param_fall  = time_x[part] * (1.0f - slant) * 10.0f;
@@ -296,8 +347,8 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 
 		} // for (int part, ... )
 
-	}
-};
+	}//void
+};//module
 
 struct EnvelopeArrayWidget : ModuleWidget {
 	EnvelopeArrayWidget(EnvelopeArray* module) {
@@ -332,6 +383,25 @@ struct EnvelopeArrayWidget : ModuleWidget {
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(44.178, 78.815)), module, EnvelopeArray::_4_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(56.537, 78.815)), module, EnvelopeArray::_5_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(68.896, 78.815)), module, EnvelopeArray::_6_INPUT));
+
+		// For Time1 Group
+		float groupStartXTime1 = 11.228 - 11.5; // Starting x-coordinate for the Time1 group
+		addParam(createParamCentered<TL1105>(mm2px(Vec(groupStartXTime1 + 6.5, 15)), module, EnvelopeArray::TIME1_RANGE_BUTTON)); // Button is 5 mm wide, so +2.5 mm to center it
+
+		// LEDs for Time1, positioned right of the button with 1 mm gaps
+		addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(groupStartXTime1 + 12, 15)), module, EnvelopeArray::TIME1_LED1_LIGHT)); // First LED
+		addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(groupStartXTime1 + 15, 15)), module, EnvelopeArray::TIME1_LED2_LIGHT)); // Second LED
+		addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(groupStartXTime1 + 18, 15)), module, EnvelopeArray::TIME1_LED3_LIGHT)); // Third LED
+
+		// For Time6 Group
+		float groupStartXTime6 = 65.323 - 11.5; // Starting x-coordinate for the Time6 group
+		addParam(createParamCentered<TL1105>(mm2px(Vec(groupStartXTime6 + 6.5, 15)), module, EnvelopeArray::TIME6_RANGE_BUTTON)); // Button centered
+
+		// LEDs for Time6, positioned right of the button with 1 mm gaps
+		addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(groupStartXTime6 + 12, 15)), module, EnvelopeArray::TIME6_LED1_LIGHT)); // First LED
+		addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(groupStartXTime6 + 15, 15)), module, EnvelopeArray::TIME6_LED2_LIGHT)); // Second LED
+		addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(groupStartXTime6 + 18, 15)), module, EnvelopeArray::TIME6_LED3_LIGHT)); // Third LED
+
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.1, 93.125)), module, EnvelopeArray::_1_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(19.459, 93.125)), module, EnvelopeArray::_2_OUTPUT));

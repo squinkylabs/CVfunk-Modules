@@ -6,6 +6,8 @@ struct ComparatorStepper : Module {
 		BIAS_PARAM,
 		RANGE_PARAM,
 		STEP_PARAM,
+		TRIGGER_BUTTON_PARAM,
+		RESET_BUTTON_PARAM,
 		PARAMS_LEN
 	};
 	enum InputId {
@@ -50,6 +52,11 @@ struct ComparatorStepper : Module {
     bool triggerState = false; // Keeps track of trigger state
     bool resetState = false; // Keeps track of reset state
 
+    // Declare previous states as member variables
+    bool previousTriggerState = false;
+    bool previousResetState = false;
+
+
 	ComparatorStepper() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configParam(BIAS_PARAM, -5.f, 5.f, 1.f, "");
@@ -67,6 +74,11 @@ struct ComparatorStepper : Module {
 		configOutput(STEPPER_OUTPUT, "");
         // Initialize step_mix with the bias value
         step_mix = params[BIAS_PARAM].getValue() + inputs[BIAS_INPUT].getVoltage();
+        
+       // Initialize variables in the constructor
+        previousTriggerState = false;
+        previousResetState = false;
+        
 	}
 
  void process(const ProcessArgs& args) override {
@@ -123,49 +135,47 @@ struct ComparatorStepper : Module {
         step = -step;
     }
 
-    // Stepper stage
-    float triggerInput = inputs[TRIGGER_INPUT].getVoltage();
-    float resetInput = inputs[RESET_INPUT].getVoltage();
+	 // Detect rising signal on TRIGGER_INPUT or manual trigger button press
+	bool manualTriggerPressed = params[TRIGGER_BUTTON_PARAM].getValue() > 0.0f;
+	bool currentTriggerState = (inputs[TRIGGER_INPUT].isConnected() && inputs[TRIGGER_INPUT].getVoltage() > 1.0f) || manualTriggerPressed;
 
-    // Process trigger inputs with Schmitt trigger
-    if (!triggerState && triggerInput > TRIGGER_THRESHOLD_HIGH) {
-        triggerState = true; // Trigger is high
-        // Process trigger event here...
-        
-        //Decide to step or to correct
-        if (correction==0){
-			// Sample and hold STEP_MIX
-			step_mix = step_mix + step;
-        } else {
-			// Sample and hold STEP_MIX
-			step_mix = step_mix + correction;
-        }
- 
+	// Detect rising signal on RESET_INPUT or manual reset button press
+	bool manualResetPressed = params[RESET_BUTTON_PARAM].getValue() > 0.0f;
+	bool currentResetState = (inputs[RESET_INPUT].isConnected() && inputs[RESET_INPUT].getVoltage() > 1.0f) || manualResetPressed;
+
+	// Trigger logic
+	if (currentTriggerState && !previousTriggerState) {
+		// Decide to step or to correct based on 'correction' variable
+		if (correction == 0) {
+			step_mix += step;  // Increment step_mix by step value
+		} else {
+			step_mix += correction;  // Adjust step_mix by correction value
+		}
+
 		// Clamp step_mix to +/-10V
-		step_mix = clamp(step_mix, -10.0f, 10.0f); 
-        
-        outputs[STEPPER_OUTPUT].setVoltage(step_mix);
-        lights[SAMPLE_LIGHT].setSmoothBrightness(1.0, args.sampleTime);
-    } else if (triggerState && triggerInput < TRIGGER_THRESHOLD_LOW) {
-        triggerState = false; // Reset trigger state
-        lights[SAMPLE_LIGHT].setSmoothBrightness(0.0, args.sampleTime);
-    }
+		step_mix = clamp(step_mix, -10.0f, 10.0f);
 
-    // Reset on trigger input
-    if (resetInput >= 1.0) {
-        // Reset to bias
-        outputs[STEPPER_OUTPUT].setVoltage(bias);
-        if (inputs[COMPARATOR_INPUT].isConnected()) {
-            step_mix = 0.0;
-        } else {
-            step_mix = bias;
-        }
-        lights[SAMPLE_LIGHT].setSmoothBrightness(1.0, args.sampleTime);
-    } else if (!triggerState) {
-        // Output previous value if no trigger or reset
-        outputs[STEPPER_OUTPUT].setVoltage(step_mix); // Output stored value
-        lights[SAMPLE_LIGHT].setSmoothBrightness(0.0, args.sampleTime);
-    }
+		outputs[STEPPER_OUTPUT].setVoltage(step_mix);
+		lights[SAMPLE_LIGHT].setSmoothBrightness(1.0, args.sampleTime);
+	}
+
+	// Reset logic
+	if (currentResetState && !previousResetState) {
+		// Reset step_mix to bias or 0 depending on COMPARATOR_INPUT connection
+		step_mix = inputs[COMPARATOR_INPUT].isConnected() ? 0.0 : bias;
+
+		outputs[STEPPER_OUTPUT].setVoltage(step_mix);
+		lights[SAMPLE_LIGHT].setSmoothBrightness(1.0, args.sampleTime);
+	} else if (!currentTriggerState) {
+		// Maintain previous value if no trigger or reset
+		outputs[STEPPER_OUTPUT].setVoltage(step_mix);
+		lights[SAMPLE_LIGHT].setSmoothBrightness(0.0, args.sampleTime);
+	}
+
+	// Update previous states at the end of the process cycle
+	previousTriggerState = currentTriggerState;
+	previousResetState = currentResetState;
+
 
     // Output
 	if (comparatorOutput > 0) {
@@ -227,6 +237,10 @@ struct ComparatorStepperWidget : ModuleWidget {
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.3, 112.263)), module, ComparatorStepper::STEP_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(19.545, 112.263)), module, ComparatorStepper::TRIGGER_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(32.159, 112.263)), module, ComparatorStepper::RESET_INPUT));
+
+		addParam(createParamCentered<TL1105>(mm2px(Vec(19.545, 105.263)), module, ComparatorStepper::TRIGGER_BUTTON_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(32.159, 105.263)), module, ComparatorStepper::RESET_BUTTON_PARAM));
+
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(44.445, 19.632)), module, ComparatorStepper::COMPARATOR_UP_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(44.426, 28.485)), module, ComparatorStepper::COMPARATOR_DN_OUTPUT));
