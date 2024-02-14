@@ -7,14 +7,14 @@ Explore the vast possibilities of modular synthesis with the CV Funk Module Coll
 
 ## Modules Overview
 
-### Penta Sequencer
-A 5-step sequencer that redefines rhythmic and melodic structuring, offering Circular and Star modes for diverse sequencing, complete with directional control and adjustable slew for smooth transitions, all visually guided by intuitive step indicators.
-
 ### Comparator Stepper
 A fusion of comparison logic and step sequencing, this module allows for dynamic pattern creation, influenced by external voltage levels. It provides hands-on control over bias, range, and step characteristics, complemented by clear visual feedback on the current state and progression.
 
 ### Envelope Array
 An envelope generation powerhouse, the Envelope Array offers unparalleled control over the shape and dynamics of your sound. With six individually controllable stages, each featuring adjustable slant, curve, and time parameters, it opens up a realm of expressive modulation possibilities.
+
+### Penta Sequencer
+A 5-step sequencer that redefines rhythmic and melodic structuring, offering Circular and Star modes for diverse sequencing, complete with directional control and adjustable slew for smooth transitions, all visually guided by intuitive step indicators.
 
 ### Wave Propagation
 Simulate the mesmerizing movement of waves through a network of nodes with the Wave Propagation module. This module not only brings a visual spectacle to your rack but also offers a unique approach to spatial sound design and dynamic modulation, with 24 outputs representing the ebb and flow of energy through the network.
