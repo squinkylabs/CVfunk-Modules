@@ -59,16 +59,17 @@ The Envelope Array is an advanced envelope generator module for VCV Rack, design
 ## Features
 
 - **Multi-Stage Envelopes**: Six independent envelope generators with configurable time and curve settings for intricate modulation possibilities.
+- **Adjustable Range**: Button and indicator lights above the WIDTH inputs allow you to set the range smoothly from audio rate sounds to minute long cycles.
 - **Curve and Slant Control**: Adjustable curve and slant parameters for shaping the envelope's attack and decay characteristics.
 - **Attenuation Inputs**: Dedicated attenuation controls for slant, curve, and time parameters to fine-tune envelope responses.
-- **End of Cycle Outputs**: Individual EOF outputs for each envelope stage, offering synchronization options with other modules.
+- **End of Cycle Outputs**: Individual EOF outputs for each envelope stage, offering synchronization options with other modules and extensive self-patching possibilities.
 - **Voltage Control**: Extensive CV inputs for real-time modulation of all key parameters, enhancing dynamic interaction within patches.
-- **Polyphonic Capabilities**: Designed to support polyphonic inputs, enabling complex voice modulation within a polyphonic setup.
+- **Polyphonic Capabilities**: Designed to support up to four polyphonic inputs, enabling complex voice modulation within a polyphonic setup.
 
 ## Usage
 
-1. **Set Envelope Stages**: Adjust TIME1 and TIME6 knobs to define the initial and final stages of the envelope's duration.
-2. **Shape Modulation**: Use SLANT and CURVE knobs to shape the envelope's trajectory, creating everything from linear to exponential responses.
+1. **Set Envelope Stages**: Adjust TIME1 and TIME6 knobs to define the initial and final stages of the envelope array, the other outputs will take intermediate values.
+2. **Shape Modulation**: Use SLANT and CURVE knobs to shape the envelope's trajectory, creating everything from logarithmic to linear to exponential responses.
 3. **Dynamic Control**: Patch CV signals into the respective attenuation inputs for real-time modulation of slant, curve, and time parameters.
 4. **Monitor Envelopes**: Observe the module's LED indicators for real-time visual feedback on the envelope stages and end-of-cycle signals.
 5. **Integrate with System**: Utilize the EOF outputs to trigger or synchronize with other modules, creating complex rhythmic patterns or sequences.
@@ -77,6 +78,10 @@ The Envelope Array is an advanced envelope generator module for VCV Rack, design
 
 - **Complex Modulation**: Use the Envelope Array to modulate filter cutoffs, oscillator frequencies, or VCA amplitudes, creating evolving textures and timbres.
 - **Rhythmic Sequencing**: Connect the EOF outputs to sequencer reset inputs, using the envelope stages to define rhythmic patterns.
+- **Six Oscillators**: Self-patch each channels EOF to IN. The EOF will trigger a gate at the end of each cycle, starting a new cycle.
+- **Chained Envelopes**: Patch Channel 1 EOF into Channel 2 IN, Channel 2 EOF into Channel 3 IN, etc. When one envelope completes it triggers the next in the series. Patch Channel 6 EOF back to Channel 1 IN to daisy chain all of the envelopes. Use the envelope outs to self-modulate other parameters to generate more complex modulation patterns.
+- **Sub Harmonics**: Set both ranges to audio rate. Patch Channel 1 EOF into its own IN, letting it be the root harmonic. Patch all 6 envelope outputs to a mixer. Since each channel cannot reset until it is at the end of its cycle, they will always be retriggered in sync with the root oscillator. Use another module such as Wave Propagation to control the mixer for more variation.
+
 
 
 # Penta Sequencer Module
@@ -89,15 +94,15 @@ The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack
 ## Features
 
 - **5-Step Sequencing**: Offers a concise yet powerful 5-step sequencing capability, suitable for generating rhythmic patterns and melodic sequences.
-- **Multiple Modes**: Includes Circular (CIRC) and Star (STAR) sequencing modes, providing different traversal paths through the 5 steps for varied musical outcomes.
+- **Trigger Button**: Use the button to manually advance the sequence, making it easier to tune the 5 steps.
+- **Trigger Input**: Advances the sequence with external trigger signals, enabling synchronization with other modules.
+- **Multiple Sequencing Modes**: Includes Circle (CIRC) and Star (STAR) sequencing modes, providing different traversal paths through the 5 steps for varied musical outcomes.
 - **Direction Control**: Supports both Clockwise (CW) and Counterclockwise (CCW) directions, giving users the flexibility to reverse the sequence flow.
 - **Dynamic Slew Control**: Features a slew control knob that adjusts the transition smoothness between steps, allowing for glide effects between voltages.
-- **Trigger Input**: Advances the sequence with external trigger signals, enabling synchronization with other modules.
 - **Reset Functionality**: Includes a reset input for returning the sequencer to its initial state on demand.
 - **Visual Feedback**: Equipped with step lights under each knob to indicate the current step and mode-specific lights to provide visual cues for the sequencing path and direction.
 
 ## Usage
-
 
 1. **Knob Assignment**: Each of the five knobs (KNOB1 to KNOB5) is mapped to one of the five outputs. Advancing the sequencer rotates the mapping between output and knob, indicated by lights around each output. The knob corresponding to the bottom-most active output is indicated by a light.
 2. **Mode Selection**: A gate to the CIRC input will switch between Circular (0V) and Star (>5V) mappings when held. Changing modes will change the mapping of outputs between star and circular relative to the output indicating a 1.
@@ -130,12 +135,15 @@ The Wave Propagation module for VCV Rack simulates the propagation of waves thro
 
 ## Usage
 
-1. **Initial Setup**: Adjust the TIME, DECAY, and SPREAD parameters to define the base characteristics of the wave propagation.
-2. **Signal Input**: Introduce signals into the _00_INPUT to initiate wave propagation across the network.
-3. **Modulation**: Utilize the dedicated TIME, DECAY, and SPREAD inputs for real-time modulation of wave characteristics.
-4. **Output Utilization**: Patch outputs from the 24 nodes into various destinations to explore spatial audio effects and dynamic modulation.
+1. **Initial Setup**: Adjust the SPAN, SPREAD, and DECAY parameters to define the base characteristics of the wave propagation.
+2. **Signal Input**: Introduce signals into the IN to initiate wave propagation across the network.
+3. **Button Interface**: Manually trigger wave impulses with the button.
+4. **Modulation**: Utilize the dedicated SPAN, SPREAD, and DECAY inputs for real-time modulation of wave characteristics.
+5. **Output Utilization**: Patch outputs from the 24 nodes into various destinations to explore spatial audio effects and dynamic modulation.
+6. **Self-Patching**: Attenuverters on the inputs expand the self-patching possibilites with this module, and with 24 outputs, you have lots of options.
 
 ## Patch Suggestions
 
 - **Spatial Audio Design**: Use outputs to create immersive soundscapes, with wave propagation simulating movement across the stereo or surround field.
 - **Dynamic Modulation Source**: Employ the module as a complex, evolving modulation source, with each node modulating different parameters in your patch.
+- **Networks**: Patch multple Wave Propagation modules together. By patching interpatching the outputs from different Wave modules to their inputs, and parameters, it is possible to build complex rhythmic networks that can be used to drive expressiveness in your patches. The manual trigger button will jump start the self-patched network, now watch the signal propagate in fascinating ways.
