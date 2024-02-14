@@ -8,6 +8,7 @@ struct WavePropagation : Module {
 		ATT1_PARAM,  // Attenuverter for TIME_PARAM
         ATT2_PARAM,  // Attenuverter for DECAY_PARAM
         ATT3_PARAM,  // Attenuverter for SPREAD_PARAM
+        TRIGGER_BUTTON,
 		PARAMS_LEN
 	};
 	enum InputId {
@@ -184,21 +185,29 @@ struct WavePropagation : Module {
 
 		//Set detection threshold based on the spread input		
 		float detect_thresh = 2.0f * (-spread + 1);
+//
+		// Detect a rising signal at 1.0f on _00_INPUT or manual trigger button press to potentially activate node 0
+		bool manualTriggerPressed = params[TRIGGER_BUTTON].getValue() > 0.0f;  // Assuming TRIGGER_BUTTON is the ID for your manual trigger button
+		bool currentInputState = (inputs[_00_INPUT].isConnected() && inputs[_00_INPUT].getVoltage() > 1.0f) || manualTriggerPressed;
 
-		// Detect a rising signal at 1.0f on _00_INPUT to potentially activate node 0
-		bool currentInputState = inputs[_00_INPUT].isConnected() && inputs[_00_INPUT].getVoltage() > 1.0f; 
 		if (currentInputState && !previousInputState) {
 			// Check if node 0 is considered inactive based on its output voltage
-			if (outputs[_01_OUTPUT].getVoltage() < detect_thresh ) {
-				activeNodes.insert(0); // Reactivate node 0
-				groupElapsedTime[0] = 0.f; // Reset elapsed time for node 0
+			if (outputs[_01_OUTPUT].getVoltage() < detect_thresh) {
+				activeNodes.insert(0);  // Reactivate node 0
+				groupElapsedTime[0] = 0.f;  // Reset elapsed time for node 0
 				for (LightId light : lightGroups[0]) {
-					lights[light].setBrightness(1.0f); // Turn on all lights for node 0's group
+					lights[light].setBrightness(1.0f);  // Turn on all lights for node 0's group
 				}
 			}
 		}
-		previousInputState = currentInputState; // Update previous input state
-		
+		previousInputState = currentInputState;  // Update previous input state
+
+		// Reset the trigger button state after processing to ensure it is ready for the next press
+		if (manualTriggerPressed) {
+			params[TRIGGER_BUTTON].setValue(0.0f);
+		}		
+//
+
 		// Temporary set for nodes to deactivate
 		std::set<int> nodesToDeactivate;
 		
@@ -296,6 +305,10 @@ struct WavePropagationWidget : ModuleWidget {
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
+
+        addParam(createParamCentered<TL1105>(mm2px(Vec(10.916, 65)), module, WavePropagation::TRIGGER_BUTTON));
+
+
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.916, 72.73)), module, WavePropagation::_00_INPUT));
 
         // Attenuverter Knobs
@@ -304,9 +317,9 @@ struct WavePropagationWidget : ModuleWidget {
         addParam(createParamCentered<Trimpot>(mm2px(Vec(48.449, 35.728)), module, WavePropagation::ATT3_PARAM));
 
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.957, 26.408)), module, WavePropagation::TIME_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(29.649, 26.408)), module, WavePropagation::SPREAD_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(48.342, 26.408)), module, WavePropagation::DECAY_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.957, 24)), module, WavePropagation::TIME_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(29.649, 24)), module, WavePropagation::SPREAD_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(48.342, 24)), module, WavePropagation::DECAY_PARAM));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(11.171, 45.049)), module, WavePropagation::TIME_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(29.864, 45.049)), module, WavePropagation::SPREAD_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48.556, 45.049)), module, WavePropagation::DECAY_INPUT));
