@@ -1,0 +1,28 @@
+{
+  "slug": "EnvelopeArray",
+  "name": "Envelope Array",
+  "version": "2.0",
+  "license": "MIT",
+  "brand": "CV funk",
+  "author": "Cody Geary",
+  "authorEmail": "",
+  "authorUrl": "",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "EnvelopeArray",
+      "name": "Envelope Array",
+      "description": "Generates 6 related envelopes by interpolating between two shapes. Envelope triggers normal to the right, and retrigger only after a full cycle to produce clock divisions. End of function gates allow for complex patch programming. Accepts 4 channels of polyphony.",
+      "tags": [
+        "Envelope generator",
+        "Polyphonic",
+        "Function generator",
+        "Clock modulator"
+      ]
+    }
+  ]
+}

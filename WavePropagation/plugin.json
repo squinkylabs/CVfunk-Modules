@@ -1,0 +1,27 @@
+{
+  "slug": "WavePropagation",
+  "name": "Wave Propagation",
+  "version": "2.0",
+  "license": "MIT",
+  "brand": "CV funk",
+  "author": "Cody Geary",
+  "authorEmail": "",
+  "authorUrl": "",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "WavePropagation",
+      "name": "Wave Propagation",
+      "description": "Makes a series of related decay envelopes from a single trigger. Each node propagates to the neighbor nodes, producing complex and interrelated delay chains to its 24 outputs.",
+      "tags": [
+      "Envelope generator",
+      "Function generator",
+      "Visual"
+      ]
+    }
+  ]
+}
