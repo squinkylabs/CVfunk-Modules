@@ -2,6 +2,9 @@
 
 Explore the vast possibilities of modular synthesis with the CV Funk Module Collection, designed for VCV Rack. This suite of modules simplifies generating a complex spectrum of modulation from simple inputs. The modules are each carefully engineered to inject dynamic modulation, intricate sequencing, and immersive soundscapes into your musical creations. From the precise steps of the Penta Sequencer to the wide range of control of the Envelope Array, each module is designed to explore patch-programmable modular synthesis, inviting you to delve into the complexities of sound design with intuitive macro controls.
 
+![Light CV funk Module Panels](/img/lightmodules.png)
+![Dark CV funk Module Panels](/img/darkmodules.png)
+
 ## Modules Overview
 
 ### Penta Sequencer
@@ -17,7 +20,10 @@ An envelope generation powerhouse, the Envelope Array offers unparalleled contro
 Simulate the mesmerizing movement of waves through a network of nodes with the Wave Propagation module. This module not only brings a visual spectacle to your rack but also offers a unique approach to spatial sound design and dynamic modulation, with 24 outputs representing the ebb and flow of energy through the network.
 
 
-
+<div style="display: flex;">
+  <img src="/img/ComparatorStepperLight.png" alt="Image 1" style="width: 50%;">
+  <img src="/img/ComparatorStepperDark.png" alt="Image 2" style="width: 50%;">
+</div>
 
 # Comparator Stepper Module
 
