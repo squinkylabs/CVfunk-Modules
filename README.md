@@ -21,12 +21,12 @@ Simulate the mesmerizing movement of waves through a network of nodes with the W
 
 # Comparator Stepper Module
 
-The Comparator Stepper combines comparator functionalities with a step sequencer to provide dynamic control over step signal generation. The stepper increments a voltage in a voltage window, and can be used to generate CV for fixed-interval scales of any width.
+The Comparator Stepper combines comparator functionalities with a step sequencer to provide precise control over step signal generation. The stepper increments a voltage in a voltage window, and can be used to generate CV for fixed-interval scales of any width.
 
 ## Features
 
 - **Comparator with Adjustable Range**: Offers precision control over signal comparison, with adjustable bias and range parameters.
-- **Step Sequencing**: Incorporates a step sequencer that modulates output based on the comparator's result, enhancing rhythmic and melodic possibilities.
+- **Step Sequencing**: Incorporates a step sequencer that modulates output based on a step size parameter with window-range feedback from the connected comparator, enhancing rhythmic and melodic possibilities.
 - **Dynamic Step Modulation**: Features dynamic step size control, allowing for varied step increments influenced by external CV inputs.
 - **Dual Comparator Outputs**: Provides separate outputs for 'above threshold' and 'below threshold' signals, enabling diverse signal routing options.
 - **Visual Feedback**: Equipped with LED indicators for comparator status and step level, offering instant visual cues to the user.
@@ -35,16 +35,16 @@ The Comparator Stepper combines comparator functionalities with a step sequencer
 
 1. **Parameter Control**: Adjust the BIAS, RANGE, and STEP parameters to set the initial conditions for comparison and step modulation.
 2. **Comparator Input**: Feed the signal to be compared into the COMPARATOR INPUT. The module compares this input against the internally set threshold, influenced by BIAS and RANGE parameters.
-3. **Step Sequencing**: Utilize the STEP INPUT to dynamically control the step size. The module advances the step based on the comparator's output and the defined step size.
-4. **External Modulation**: Patch signals into BIAS INPUT, RANGE INPUT, and INVERT INPUT for dynamic control over the module's parameters.
-5. **Trigger and Reset**: Use TRIGGER INPUT to advance the step sequencer and RESET INPUT to reset the sequence to its initial state.
+3. **Normalled Connections**:Using the comparator input breaks the normalization to the stepper section, allowing both sections to be used independently. When normalled, the comparator provides feedback voltagers to the stepper to bump it back into the window range after a step goes out of bounds. The lag of one step for corrections produces variation in the output.
+4. **Interval Sequencing**: Utilize the STEP input to dynamically control the interval between steps. The step knob ranges from -1...1V, and is summed with the input. Inputs are scaled down 1/5, so that a -5...5V signal will sweep the full knob range for step size.
+5. **External Modulation**: Patch signals into BIAS input, RANGE input, and INVERT input for dynamic control over the module's parameters.
+6. **Trigger and Reset**: Use TRIGGER INPUT to advance the step sequencer and RESET input to reset the sequence to its initial state.
 
 ## Patch Suggestions
 
 - **Dynamic Rhythms**: Create dynamic rhythmic patterns by modulating the STEP and BIAS parameters with LFOs or other modulation sources.
 - **Melodic Sequencing**: Use the STEPPER OUTPUT to drive the pitch of an oscillator, crafting evolving melodic lines influenced by the comparator's operation.
-
-
+- **Counting**: Adjust the ratio between RANGE and STEP size to derive the number of desired steps. For example setting RANGE to 4V and STEP size to 1V will result in a comparator gate to be outputted once every four steps.
 
 # Envelope Array Module
 
