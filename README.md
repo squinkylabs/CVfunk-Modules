@@ -19,10 +19,9 @@ A 5-step sequencer that redefines rhythmic and melodic structuring, offering Cir
 ### Wave Propagation
 Simulate the mesmerizing movement of waves through a network of nodes with the Wave Propagation module. This module not only brings a visual spectacle to your rack but also offers a unique approach to spatial sound design and dynamic modulation, with 24 outputs representing the ebb and flow of energy through the network.
 
+# Comparator Stepper Module
 
 <img src="/img/ComparatorStepperLight.png" alt="Image 1" height="500"> <img src="/img/ComparatorStepperDark.png" alt="Image 2" height="500">
-
-# Comparator Stepper Module
 
 The Comparator Stepper combines comparator functionalities with a step sequencer to provide precise control over step signal generation. The stepper increments a voltage in a voltage window, and can be used to generate CV for fixed-interval scales of any width.
 
@@ -50,10 +49,10 @@ The Comparator Stepper combines comparator functionalities with a step sequencer
 - **Counting**: Adjust the ratio between RANGE and STEP size to derive the number of desired steps. For example setting RANGE to 4V and STEP size to 1V will result in a comparator gate to be outputted once every four steps.
 
 
+# Envelope Array Module
+
 <img src="/img/EnvelopeArrayLight.png" alt="Image 1" height="500"> <img src="/img/EnvelopeArrayDark.png" alt="Image 2" height="500">
 
-
-# Envelope Array Module
 
 The Envelope Array is an advanced envelope generator module for VCV Rack, designed to provide a wide array of dynamic control over amplitude shaping with six stages and complex modulation capabilities. The module can be self-patched to create a wide variety of modulations and is capable of self-oscillation when self-patched.
 
@@ -80,10 +79,10 @@ The Envelope Array is an advanced envelope generator module for VCV Rack, design
 - **Rhythmic Sequencing**: Connect the EOF outputs to sequencer reset inputs, using the envelope stages to define rhythmic patterns.
 
 
+# Penta Sequencer Module
+
 <img src="/img/PentaSequencerLight.png" alt="Image 1" height="500"> <img src="/img/PentaSequencerDark.png" alt="Image 2" height="500">
 
-
-# Penta Sequencer Module
 
 The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack, it offers some unique sequencing capabilities in a small footprint. The sequencer outputs all five of its notes simultaneously, and has a computed slew that adjusts dynamically to the trigger input. 
 
@@ -109,15 +108,16 @@ The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack
 
 ## Patch Suggestions
 
-- **Slewed Octaves: Set each of the five knobs to -2, -1, 0, 1, 2.  Set the slew to 0.25 for smooth slewing. Patch each of the five outs to a WT-VCO, adjust each to have a slightly different timbre. With a second copy of the Penta Sequencer, set five different notes, set the slew of this one to 0.0, and ideally quantize the outputs before patching to the transpose input of the other sequencer. Now the slew will be perfectly in tune.
+- **Slewed Octaves**: Set each of the five knobs to -2, -1, 0, 1, 2.  Set the slew to 0.25 for smooth slewing. Patch each of the five outs to a WT-VCO, adjust each to have a slightly different timbre. With a second copy of the Penta Sequencer, set five different notes, set the slew of this one to 0.0, and ideally quantize the outputs before patching to the transpose input of the other sequencer. Now the slew will be perfectly in tune.
 
-- **LFO: Set a large clock division to the trigger input, set the slew to 1.0. You will have five very slow LFOs. The slew interpolates using the time between the last two inputs (trigger/shape/direction) to compute the ramp.
+- **LFO**: Set a large clock division to the trigger input, set the slew to 1.0. You will have five very slow LFOs. The slew interpolates using the time between the last two inputs (trigger/shape/direction) to compute the ramp.
 
-- **Fixed Root: Reset the sequencer so that the bottom output is set to 1. Send gates to switch between Star/Circle/CCW/CW, the bottom output will always stay the same.
+- **Fixed Root Note**: Reset the sequencer so that the bottom output is set to 1. Send gates to switch between Star/Circle/CCW/CW, the bottom output will always stay the same.
+
+# Wave Propagation Module
 
 <img src="/img/WavePropagationLight.png" alt="Image 1" height="400"> <img src="/img/WavePropagationDark.png" alt="Image 2" height="400">
 
-# Wave Propagation Module
 
 The Wave Propagation module for VCV Rack simulates the propagation of waves through a medium, offering unique visual and auditory feedback based on the interactions within a network of nodes. Each of the 24 nodes can generate a decay envelope when stimulated, allowing for long decay tails and rhythmic synchronized pulsations.
 
