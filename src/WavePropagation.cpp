@@ -5,6 +5,9 @@ struct WavePropagation : Module {
 		TIME_PARAM,
 		DECAY_PARAM,
 		SPREAD_PARAM,
+		ATT1_PARAM,  // Attenuverter for TIME_PARAM
+        ATT2_PARAM,  // Attenuverter for DECAY_PARAM
+        ATT3_PARAM,  // Attenuverter for SPREAD_PARAM
 		PARAMS_LEN
 	};
 	enum InputId {
@@ -115,6 +118,11 @@ struct WavePropagation : Module {
 		configParam(TIME_PARAM, 0.0f, 1.0f, 0.5f, "");
 		configParam(SPREAD_PARAM, -1.0f, 1.f, 0.5f, "");
 		configParam(DECAY_PARAM, 0.0f, 1.0f, 0.5f, "");
+		
+		configParam(ATT1_PARAM, -1.0f, 1.0f, 1.0f, "Time Attenuverter");
+		configParam(ATT2_PARAM, -1.0f, 1.0f, 1.0f, "Decay Attenuverter");
+		configParam(ATT3_PARAM, -1.0f, 1.0f, 1.0f, "Spread Attenuverter");
+
 		configInput(_00_INPUT, "");
 		configInput(TIME_INPUT, "");
 		configInput(SPREAD_INPUT, "");
@@ -142,11 +150,11 @@ struct WavePropagation : Module {
 		time_x[0] = params[TIME_PARAM].getValue(); //Time interval for the first generator
 
 		if (inputs[DECAY_INPUT].isConnected())
-			decay += inputs[DECAY_INPUT].getVoltage()*0.1;
+			decay += inputs[DECAY_INPUT].getVoltage()*0.1*params[ATT2_PARAM].getValue();
 		if (inputs[SPREAD_INPUT].isConnected())
-			spread += inputs[SPREAD_INPUT].getVoltage()*0.1;
+			spread += inputs[SPREAD_INPUT].getVoltage()*0.1*params[ATT3_PARAM].getValue();
 		if (inputs[TIME_INPUT].isConnected())
-			time_x[0] += inputs[TIME_INPUT].getVoltage()*0.1;
+			time_x[0] += inputs[TIME_INPUT].getVoltage()*0.1*params[ATT1_PARAM].getValue();
 
 		// Clamp the param values after adding voltages
 		decay = clamp(decay, 0.00f, 1.0f); 
@@ -288,14 +296,21 @@ struct WavePropagationWidget : ModuleWidget {
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.916, 72.73)), module, WavePropagation::_00_INPUT));
+
+        // Attenuverter Knobs
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(11.064, 35.728)), module, WavePropagation::ATT1_PARAM));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(29.756, 35.728)), module, WavePropagation::ATT2_PARAM));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(48.449, 35.728)), module, WavePropagation::ATT3_PARAM));
+
+
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.957, 26.408)), module, WavePropagation::TIME_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(29.649, 26.408)), module, WavePropagation::SPREAD_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(48.342, 26.408)), module, WavePropagation::DECAY_PARAM));
-
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.916, 72.73)), module, WavePropagation::_00_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(11.171, 45.049)), module, WavePropagation::TIME_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(29.864, 45.049)), module, WavePropagation::SPREAD_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48.556, 45.049)), module, WavePropagation::DECAY_INPUT));
+
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(29.445, 72.73)), module, WavePropagation::_01_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(47.974, 72.73)), module, WavePropagation::_02_OUTPUT));
