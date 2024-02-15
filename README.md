@@ -19,6 +19,10 @@ A 5-step sequencer that redefines rhythmic and melodic structuring, offering Cir
 ### Wave Propagation
 Simulate the mesmerizing movement of waves through a network of nodes with the Wave Propagation module. This module not only brings a visual spectacle to your rack but also offers a unique approach to spatial sound design and dynamic modulation, with 24 outputs representing the ebb and flow of energy through the network.
 
+### Signals
+Observe and compare six signal inputs. Range from ms to sec. Includes a trigger reset toggle.
+
+
 # Comparator Stepper Module
 
 <img src="/img/ComparatorStepperLight.png" alt="Image 1" style="height: 300px; "> <img src="/img/ComparatorStepperDark.png" alt="Image 2" style="height: 300px; ">
@@ -148,3 +152,17 @@ The Wave Propagation module for VCV Rack simulates the propagation of waves thro
 - **Spatial Audio Design**: Use outputs to create immersive soundscapes, with wave propagation simulating movement across the stereo or surround field.
 - **Dynamic Modulation Source**: Employ the module as a complex, evolving modulation source, with each node modulating different parameters in your patch.
 - **Networks**: Patch multple Wave Propagation modules together. By patching interpatching the outputs from different Wave modules to their inputs, and parameters, it is possible to build complex rhythmic networks that can be used to drive expressiveness in your patches. The manual trigger button will jump start the self-patched network, now watch the signal propagate in fascinating ways.
+
+
+# Signals
+
+<img src="/img/SignalsLight.png" alt="Image 1" height="300"> <img src="/img/SignalsDark.png" alt="Image 2" height="300">
+
+
+The Signals module is handy to tune up your envelope and LFO shapes. Simultaneous viewing of 6 channels in a small module makes it possible to fit these into your signal chain without getting in the way. Range knob and trigger latch make it useful for observing envelopes or free flowing signals. 
+
+## Features
+
+- **Six Scopes**: Compare sets of signals to each other in a simple way.
+- **Adjustable Range**: Provides smooth range control from milliseconds to 1 sec.
+- **Trigger Reset**: Equipped with a toggle button to activate channel triggering, allowing you to visualize envelopes or free flowing signals.
