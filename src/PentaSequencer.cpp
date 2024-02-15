@@ -136,9 +136,9 @@ struct PentaSequencer : Module {
         // Define Knob to Output maps
 		//                      A  B  C  D  E
 		int CIRC_CW_map[5]  =  {0, 1, 2, 3, 4};
-		int STAR_CW_map[5]  =  {0, 2, 4, 1, 3}; 
+		int STAR_CW_map[5]  =  {0, 3, 1, 4, 2}; 
 		int CIRC_CCW_map[5] =  {0, 4, 3, 2, 1};
-		int STAR_CCW_map[5] =  {0, 3, 1, 4, 2}; 
+		int STAR_CCW_map[5] =  {0, 2, 4, 1, 3}; 
 
 
 		int* currentMapping;
@@ -294,7 +294,7 @@ struct PentaSequencer : Module {
 
 
 		// Inner Lights for STAR Track Movements
-		if (mode == CCW_STAR || mode == CW_STAR) {
+		if (starMode) {
 			switch (step) {
 				case 0: //E->A->B
 					lights[INNERA_LIGHT].setBrightness(1.0f);
@@ -320,7 +320,7 @@ struct PentaSequencer : Module {
 		}
 
 		// Outer Lights for CIRC Track Movements
-		if (mode == CW_CIRC || mode == CCW_CIRC) {
+		if (circMode) {
 			switch (step) {
 				case 0: //E->A->B
 					lights[OUTERA_LIGHT].setBrightness(1.0f);
