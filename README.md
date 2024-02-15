@@ -21,7 +21,7 @@ Simulate the mesmerizing movement of waves through a network of nodes with the W
 
 # Comparator Stepper Module
 
-<img src="/img/ComparatorStepperLight.png" alt="Image 1" height="500"> <img src="/img/ComparatorStepperDark.png" alt="Image 2" height="500">
+<img src="/img/ComparatorStepperLight.png" alt="Image 1" style="max-height: 400px; width: auto;"> <img src="/img/ComparatorStepperDark.png" alt="Image 2" style="max-height: 400px; width: auto;">
 
 The Comparator Stepper combines comparator functionalities with a step sequencer to provide precise control over step signal generation. The stepper increments a voltage in a voltage window, and can be used to generate CV for fixed-interval scales of any width.
 
@@ -51,7 +51,7 @@ The Comparator Stepper combines comparator functionalities with a step sequencer
 
 # Envelope Array Module
 
-<img src="/img/EnvelopeArrayLight.png" alt="Image 1" height="500"> <img src="/img/EnvelopeArrayDark.png" alt="Image 2" height="500">
+<img src="/img/EnvelopeArrayLight.png" alt="Image 1" height="400"> <img src="/img/EnvelopeArrayDark.png" alt="Image 2" height="400">
 
 
 The Envelope Array is an advanced envelope generator module for VCV Rack, designed to provide a wide array of dynamic control over amplitude shaping with six stages and complex modulation capabilities. The module can be self-patched to create a wide variety of modulations and is capable of self-oscillation when self-patched.
@@ -86,7 +86,7 @@ The Envelope Array is an advanced envelope generator module for VCV Rack, design
 
 # Penta Sequencer Module
 
-<img src="/img/PentaSequencerLight.png" alt="Image 1" height="500"> <img src="/img/PentaSequencerDark.png" alt="Image 2" height="500">
+<img src="/img/PentaSequencerLight.png" alt="Image 1" height="400"> <img src="/img/PentaSequencerDark.png" alt="Image 2" height="400">
 
 
 The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack, it offers some unique sequencing capabilities in a small footprint. The sequencer outputs all five of its notes simultaneously, and has a computed slew that adjusts dynamically to the trigger input. 
@@ -105,8 +105,8 @@ The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack
 ## Usage
 
 1. **Knob Assignment**: Each of the five knobs (KNOB1 to KNOB5) is mapped to one of the five outputs. Advancing the sequencer rotates the mapping between output and knob, indicated by lights around each output. The knob corresponding to the bottom-most active output is indicated by a light.
-2. **Mode Selection**: A gate to the CIRC input will switch between Circular (0V) and Star (>5V) mappings when held. Changing modes will change the mapping of outputs between star and circular relative to the output indicating a 1.
-3. **Direction Control**: A gate to the CW input will switch between Clockwise (0V) and Counterclockwise (>5V) mappings when held. Changing direction will exchange the left and right ouputs.
+2. **Mode Selection**: A gate to the CIRC input will switch between Circular (<=1V) and Star (>1V) mappings when held. Changing modes will change the mapping of outputs between star and circular relative to the output indicating a 1.
+3. **Direction Control**: A gate to the CW input will switch between Clockwise (<=1V) and Counterclockwise (>1V) mappings when held. Changing direction will exchange the left and right ouputs.
 4. **Advancing the Sequence**: Send trigger signals or button press to the TRIG input to advance through the sequence according to the selected mode and direction.
 5. **Resetting the Sequence**: Send a trigger signal to the RESET input to return the sequencer to the first step.
 6. **Adjusting Slew**: Use the SLEW knob to control the transition smoothness between steps, the slew is synchronized to both the trigger timing and interval size, this means bigger octave jumps slew faster.
