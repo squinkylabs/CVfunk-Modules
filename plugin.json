@@ -51,6 +51,17 @@
         "Function generator",
         "Visual"
       ]
+    },
+   {
+      "slug": "Signals",
+      "name": "Signals",
+      "description": "A small 6-channel oscilloscope for visualizing envelope signals.",
+      "tags": [
+        "Visual"
+      ]
     }
+
+
+
   ]
 }
