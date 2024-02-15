@@ -12,3 +12,5 @@ extern Model* modelComparatorStepper;
 extern Model* modelEnvelopeArray;
 extern Model* modelPentaSequencer;
 extern Model* modelWavePropagation;
+
+extern Model* modelSignals;
