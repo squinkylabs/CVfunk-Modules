@@ -21,7 +21,8 @@ Simulate the mesmerizing movement of waves through a network of nodes with the W
 
 # Comparator Stepper Module
 
-<img src="/img/ComparatorStepperLight.png" alt="Image 1" style="max-height: 400px; width: auto;"> <img src="/img/ComparatorStepperDark.png" alt="Image 2" style="max-height: 400px; width: auto;">
+<img src="/img/ComparatorStepperLight.png" alt="Image 1" style="height: 300px; "> <img src="/img/ComparatorStepperDark.png" alt="Image 2" style="height: 300px; ">
+
 
 The Comparator Stepper combines comparator functionalities with a step sequencer to provide precise control over step signal generation. The stepper increments a voltage in a voltage window, and can be used to generate CV for fixed-interval scales of any width.
 
@@ -51,7 +52,7 @@ The Comparator Stepper combines comparator functionalities with a step sequencer
 
 # Envelope Array Module
 
-<img src="/img/EnvelopeArrayLight.png" alt="Image 1" height="400"> <img src="/img/EnvelopeArrayDark.png" alt="Image 2" height="400">
+<img src="/img/EnvelopeArrayLight.png" alt="Image 1" height="300"> <img src="/img/EnvelopeArrayDark.png" alt="Image 2" height="300">
 
 
 The Envelope Array is an advanced envelope generator module for VCV Rack, designed to provide a wide array of dynamic control over amplitude shaping with six stages and complex modulation capabilities. The module can be self-patched to create a wide variety of modulations and is capable of self-oscillation when self-patched.
@@ -86,7 +87,7 @@ The Envelope Array is an advanced envelope generator module for VCV Rack, design
 
 # Penta Sequencer Module
 
-<img src="/img/PentaSequencerLight.png" alt="Image 1" height="400"> <img src="/img/PentaSequencerDark.png" alt="Image 2" height="400">
+<img src="/img/PentaSequencerLight.png" alt="Image 1" height="300"> <img src="/img/PentaSequencerDark.png" alt="Image 2" height="300">
 
 
 The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack, it offers some unique sequencing capabilities in a small footprint. The sequencer outputs all five of its notes simultaneously, and has a computed slew that adjusts dynamically to the trigger input. 
@@ -121,7 +122,7 @@ The Penta Sequencer is a versatile 5-step sequencer module designed for VCV Rack
 
 # Wave Propagation Module
 
-<img src="/img/WavePropagationLight.png" alt="Image 1" height="400"> <img src="/img/WavePropagationDark.png" alt="Image 2" height="400">
+<img src="/img/WavePropagationLight.png" alt="Image 1" height="300"> <img src="/img/WavePropagationDark.png" alt="Image 2" height="300">
 
 
 The Wave Propagation module for VCV Rack simulates the propagation of waves through a medium, offering unique visual and auditory feedback based on the interactions within a network of nodes. Each of the 24 nodes can generate a decay envelope when stimulated, allowing for long decay tails and rhythmic synchronized pulsations.
