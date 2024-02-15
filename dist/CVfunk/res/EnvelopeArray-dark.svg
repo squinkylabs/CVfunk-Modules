@@ -177,8 +177,8 @@
    inkscape:cy="225.69223"
    inkscape:window-width="1392"
    inkscape:window-height="1027"
-   inkscape:window-x="378"
-   inkscape:window-y="25"
+   inkscape:window-x="336"
+   inkscape:window-y="38"
    inkscape:window-maximized="0"
    inkscape:current-layer="g102"
    inkscape:document-units="mm" />
@@ -248,7 +248,8 @@
    style="fill:none;stroke:#d08c59;stroke-width:0.75px"
    id="path13" />
         <g
-   id="g13">
+   id="g13"
+   transform="translate(0,6.0128612)">
             <path
    id="path40"
    d="m 198.509,92.605 -2.304,-0.575 0.573,-2.308"
@@ -401,27 +402,27 @@
    style="fill:#d08c59;fill-rule:nonzero"
    id="path37" />
         <path
-   d="m 77.546,44.745 6.206,-6.521 5.835,6.521 H 77.865"
+   d="m 77.546,50.75786 6.206,-6.521 5.835,6.521 H 77.865"
    style="fill:#d08c59"
    id="path38" />
         <path
-   d="m 127.741,44.745 6.206,-6.521 5.835,6.521 H 128.06"
+   d="m 127.741,50.75786 6.206,-6.521 5.835,6.521 H 128.06"
    style="fill:#d08c59"
    id="path39" />
         <path
-   d="m 94.289,79.028 10.606,-6.52 1.435,6.52 H 94.608"
+   d="m 94.289,85.04086 10.606,-6.52 1.435,6.52 H 94.608"
    style="fill:#d08c59"
    id="path42" />
         <path
-   d="m 58.987,79.075 1.406,-6.521 10.635,6.521 H 59.306"
+   d="m 58.987,85.08786 1.406,-6.521 10.635,6.521 H 59.306"
    style="fill:#d08c59"
    id="path43" />
         <path
-   d="m 158.051,79.075 c -0.627,-4.765 -2.707,-6.919 -6.206,-6.521 0.411,3.398 -0.76,5.973 -5.835,6.521 h 11.722"
+   d="m 158.051,85.08786 c -0.627,-4.765 -2.707,-6.919 -6.206,-6.521 0.411,3.398 -0.76,5.973 -5.835,6.521 h 11.722"
    style="fill:#d08c59"
    id="path44" />
         <path
-   d="m 110.473,79.075 c 0.627,-4.765 2.707,-6.919 6.205,-6.521 -0.41,3.398 0.761,5.973 5.836,6.521 h -11.722"
+   d="m 110.473,85.08786 c 0.627,-4.765 2.707,-6.919 6.205,-6.521 -0.41,3.398 0.761,5.973 5.836,6.521 h -11.722"
    style="fill:#d08c59"
    id="path45" />
         <path
@@ -465,7 +466,8 @@
    style="fill:none;stroke:#d08c59;stroke-width:1px;stroke-linejoin:miter"
    id="path55" />
         <g
-   id="g55">
+   id="g55"
+   transform="translate(0,6.0128612)">
             <path
    id="path401"
    serif:id="path40"
@@ -566,11 +568,11 @@
    style="fill:none;stroke:#d08c59;stroke-width:0.75px"
    id="path66" />
         <path
-   d="M 18.049,90.821 15.05,95.056"
+   d="m 18.049,96.83386 -2.999,4.235"
    style="fill:none;stroke:#d08c59;stroke-width:0.75px"
    id="path67" />
         <path
-   d="m 171.756,90.812 -2.999,4.234"
+   d="m 171.756,96.82486 -2.999,4.234"
    style="fill:none;stroke:#d08c59;stroke-width:0.75px"
    id="path68" />
         <path
