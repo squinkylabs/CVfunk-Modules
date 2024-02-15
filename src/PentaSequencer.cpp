@@ -111,8 +111,8 @@ struct PentaSequencer : Module {
 
 	
 		// Handle CIRC and STAR modes based on SHAPE_INPUT voltage
-		if (inputs[SHAPE_INPUT].getVoltage() > 5.0f) {
-			// Voltage > 5.0f indicates STAR mode
+		if (inputs[SHAPE_INPUT].getVoltage() > 1.0f) {
+			// Voltage > 1.0f indicates STAR mode
 			starMode = true;
 			circMode = false;
 		} else {
@@ -122,8 +122,8 @@ struct PentaSequencer : Module {
 		}
 
 		// Handle CW and CCW modes based on DIR_INPUT voltage
-		if (inputs[DIR_INPUT].getVoltage() > 5.0f) {
-			// Voltage > 5.0f indicates CCW mode
+		if (inputs[DIR_INPUT].getVoltage() > 1.0f) {
+			// Voltage > 1.0f indicates CCW mode
 			ccwMode = true;
 			cwMode = false;
 		} else {
