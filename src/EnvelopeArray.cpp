@@ -107,7 +107,7 @@ struct EnvelopeArray : Module {
 		configParam(CURVE_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
 		configParam(TIME1_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
 		configParam(TIME6_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
-		//configParam(SECRET_PARAM,0.0, 10.0f, 4.7f, "Mapping to a test knob");
+		//configParam(SECRET_PARAM,0.0, 10.0f, 4.7f, "Mapping to a test knob"); //only used for calibration
 		configInput(SLANT_INPUT, "Slant IN");
 		configInput(CURVE_INPUT, "Curve IN");
 		configInput(TIME1_INPUT, "First Width IN");
@@ -160,7 +160,7 @@ struct EnvelopeArray : Module {
         // Read inputs and parameters...
         float slant = params[SLANT_PARAM].getValue();
         float curve = params[CURVE_PARAM].getValue();
-		//float secret = params[SECRET_PARAM].getValue();  //Get our tuning parameter here
+		//float secret = params[SECRET_PARAM].getValue();  //Get our calibration parameter here
 
              
         time_x[0] = params[TIME1_PARAM].getValue(); //Time interval for the first generator
@@ -181,8 +181,8 @@ struct EnvelopeArray : Module {
 		time_x[0] = clamp(time_x[0], 0.0f, 1.0f);
 		time_x[5] = clamp(time_x[5], 0.0f, 1.0f);
 
-		time_x[0]*=1.05f; //extend the knob range by 5%, this way there is overlap between range sets
-		time_x[5]*=1.05f;
+		float unscaled_t0 = time_x[0];
+		float unscaled_t5 = time_x[5];
 
 		//Scale the time_x inputs to compensate for the increase in cycle time for different slants.
 		float slant_scalefactor = 4.8;  //hand-calibrated
@@ -191,10 +191,10 @@ struct EnvelopeArray : Module {
 
 		//Scale the time_x inputs to compensate for the increase in cycle time for different curve values.
 		//For large curve values the slant compensation needs to be readjusted again
-		float curve_scalefactor = 4.6;
-		float curve_scalefactor2 = 2.85;
-		float slant_scalefactor1 = .45;
-		float slant_scalefactor2 = .4;
+		float curve_scalefactor = 4.6;    //hand-calibrated
+		float curve_scalefactor2 = 2.85;  //hand-calibrated
+		float slant_scalefactor1 = .45;   //hand-calibrated
+		float slant_scalefactor2 = .4;    //hand-calibrated
 		if (curve<0) {  //this is split into two parts because the log side of curve can scale further
 			time_x[0] = time_x[0]-(abs(curve)/curve_scalefactor)*(1 - (abs(slant)*slant_scalefactor1) );
 			time_x[5] = time_x[5]-(abs(curve)/curve_scalefactor)*(1 - (abs(slant)*slant_scalefactor1) );
@@ -259,9 +259,11 @@ struct EnvelopeArray : Module {
 
 
 			// Map the speed range to minTime values
-			float minTimeValues[] = {0.001f, 0.03f, 0.9f}; // LOW, MID, HIGH
-			float minTime1 = minTimeValues[time1Range]; // minTime for Time1 based on its speed range
-			float minTime6 = minTimeValues[time6Range]; // minTime for Time6 based on its speed range
+			float minTimeValues[] = {0.001f, 0.03f, 0.9f}; // Three Range Settings
+
+			//Scale mintime dynamically, over each range.
+			float minTime1 = unscaled_t0*minTimeValues[time1Range]+.0001f;
+			float minTime6 = unscaled_t5*minTimeValues[time6Range]+.0001f;
 
 			// Linear interpolation
 			float t = static_cast<float>(part) / 5.0f; // Normalized position between Time1 and Time6
