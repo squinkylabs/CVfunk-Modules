@@ -5,6 +5,8 @@ using namespace rack;
 
 const int MAX_BUFFER_SIZE = 44100; // 1 second buffer at 44.1kHz
 
+
+
 struct Signals : Module {
     enum ParamId {
         RANGE_PARAM,
@@ -30,17 +32,16 @@ struct Signals : Module {
     std::array<bool, 6> bufferCycledFlags = {false}; // Flags to indicate when each buffer has been cycled through
 
 	std::array<float, 6> lastTriggerTime; // Time since the last trigger for each channel
-	bool retriggerEnabled = true; // Default state
+	bool retriggerEnabled = false; // Default state
 	bool retriggerToggleProcessed = false;
 	float forceRetriggerFlags[5]={};
 
     Signals() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-        configParam(RANGE_PARAM, 0.1f, 1.f, 0.5f, "Range");
+        configParam(RANGE_PARAM, 0.0f, 1.0f, 0.5f, "Range");
         configParam(TRIGGER_ON_PARAM, 0.f, 1.f, 1.f, "Retriggering"); // Toggle button
 
         lastTriggerTime.fill(0.0f); // Initialize the trigger timers
-
 
         for (auto &buffer : envelopeBuffers) {
             buffer.resize(MAX_BUFFER_SIZE, 0.0f); // Initialize buffers with zeros
@@ -50,12 +51,8 @@ struct Signals : Module {
 void process(const ProcessArgs& args) override {
     
     
-		float windowPeriodMin = 0.1f; // Minimum window period in seconds
-		float windowPeriodMax = 2.0f; // Maximum window period in seconds
 		float range = params[RANGE_PARAM].getValue(); // Range knob value [0, 1]
-
-		// Calculate the window period based on the range knob setting
-		float windowPeriod = rescale(range, 0.f, 1.f, windowPeriodMin, windowPeriodMax);
+		range = clamp(range, 0.000001f, 1.0f); 
 
 		for (int i = 0; i < NUM_INPUTS; ++i) {
 			if (inputs[i].isConnected()) {
@@ -68,17 +65,19 @@ void process(const ProcessArgs& args) override {
 					lastTriggerTime[i] = 0.0f; // Reset the timer for this channel
 					forceRetriggerFlags[i] = false; // Clear the flag after retriggering
 				}
-				
-				
+								
 				// Update the timer for this channel
 				lastTriggerTime[i] += args.sampleTime;
 
 				// Check for retrigger condition only if retriggering is enabled
-				if (retriggerEnabled && inputVoltage > 1.0f && lastInputs[i] <= 1.0f && lastTriggerTime[i] >= windowPeriod) {
-					// Reset the buffer and write index for this channel upon triggering
-					std::fill(envelopeBuffers[i].begin(), envelopeBuffers[i].end(), 0.0f);
-					writeIndices[i] = 0;
-					lastTriggerTime[i] = 0.0f; // Reset the timer
+				if (retriggerEnabled && inputVoltage > 1.0f 
+					&& lastInputs[i] <= 1.0f 
+					&& lastTriggerTime[i] >= (range*.82f + .01f) ) {
+					
+					//	std::fill(envelopeBuffers[i].begin(), envelopeBuffers[i].end(), 0.0f);
+						writeIndices[i] = 0;
+						lastTriggerTime[i] = 0.0f; // Reset the timer
+						forceRetriggerFlags[i] = false; // Clear the flag after retriggering
 				} else {
 					// Continue writing to buffer if not triggered or if retriggering is disabled
 					envelopeBuffers[i][writeIndices[i]] = inputVoltage;
@@ -144,7 +143,7 @@ void drawWaveform(const DrawArgs& args) {
     float range = module->params[Signals::RANGE_PARAM].getValue(); // Get the range value
 
     // Use a fixed number of samples to display
-    int displaySamples = 256;
+    int displaySamples = 1024;
 
     std::vector<Vec> points;
 
@@ -162,14 +161,14 @@ void drawWaveform(const DrawArgs& args) {
 
     for (int i = 0; i < displaySamples; ++i) {
         // Calculate the index in the buffer considering the range
-        int bufferIndex = i * ((buffer.size()-1000)*range+1000) / (displaySamples - 1);
+        int bufferIndex = i * ((buffer.size()-50)*range+50) / (displaySamples - 1);
 
         float x = (static_cast<float>(i) / (displaySamples - 1)) * box.size.x; // Map to x-coordinate
         float y; // Initialize y-coordinate
 
         // Check if the corresponding input is connected
         if (module->inputs[Signals::ENV1_INPUT + channelId].isConnected()) {
-            y = box.size.y * (1.0f - (buffer[bufferIndex] / 15.0f)); // Adjust Y scaling as needed
+            y = box.size.y * (1.0f - (buffer[bufferIndex] / 15.0f)); // Divisor sets Y scaling
         } else {
             y = box.size.y; // Set y to 0 (at the bottom of the box) if input is not connected
         }
@@ -178,7 +177,7 @@ void drawWaveform(const DrawArgs& args) {
     }
 
     nvgBeginPath(args.vg);
-    nvgStrokeWidth(args.vg, 1.5);
+    nvgStrokeWidth(args.vg, 0.5*range +1.5);
     nvgStrokeColor(args.vg, waveformColor);
 
     // Move to the first point (0, box.size.y), which is the origin

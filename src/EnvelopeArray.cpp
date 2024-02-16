@@ -1,8 +1,8 @@
 #include "plugin.hpp"
 using simd::float_4;
 
-// shapeDelta function adapted from Befaco Rampage.
-static float_4 shapeDelta(float_4 delta, float_4 tau, float shape) {
+//Envelope shape adapted from Befaco shapeDelta function
+static float_4 Envelope(float_4 delta, float_4 tau, float shape) {
 	float_4 lin = simd::sgn(delta) * 10.f / tau;
 	if (shape > 0.f) {
 		float_4 log = simd::sgn(delta) * 40.f / tau / (simd::fabs(delta) + 1.f);
@@ -25,7 +25,8 @@ struct EnvelopeArray : Module {
         TIME1_ATTEN_PARAM,
         TIME6_ATTEN_PARAM,
         TIME1_RANGE_BUTTON,  
-        TIME6_RANGE_BUTTON,  
+        TIME6_RANGE_BUTTON,
+		//SECRET_PARAM, //hidden param for tuning variables        
         PARAMS_LEN  
     };
     enum InputId {
@@ -87,14 +88,14 @@ struct EnvelopeArray : Module {
     SpeedRange time1Range = MID;
     SpeedRange time6Range = MID;
 
-// Define an array to store time variables
-float time_x[6] = {0.0f}; // Initialize all elements to 0.0f
-float_4 out[6][4] = {};
-float_4 gate[6][4] = {}; // use simd __m128 logic instead of bool
+	// Define an array to store time variables
+	float time_x[6] = {0.0f}; // Initialize all elements to 0.0f
+	float_4 out[6][4] = {};
+	float_4 gate[6][4] = {}; // use simd __m128 logic instead of bool
 
-float_4 gate_no_output[6][4] = {{0.0f}}; // Initialize with all elements set to true
+	float_4 gate_no_output[6][4] = {{0.0f}}; // Initialize with all elements set to true
 
-dsp::TSchmittTrigger<float_4> trigger_4[6][4];
+	dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 
 	EnvelopeArray() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -102,10 +103,11 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 		configParam(CURVE_PARAM, -1.f, 1.f, 0.f, "Curve");
 		configParam(TIME1_PARAM, 0.0f, 1.0f, 0.4f, "First Width");
 		configParam(TIME6_PARAM, 0.0f, 1.0f, 0.6f, "Last Width");
-		configParam(SLANT_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
+		configParam(SLANT_ATTEN_PARAM, -1.0f, 1.0f, 0.f, "");
 		configParam(CURVE_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
 		configParam(TIME1_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
 		configParam(TIME6_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
+		//configParam(SECRET_PARAM,0.0, 10.0f, 4.7f, "Mapping to a test knob");
 		configInput(SLANT_INPUT, "Slant IN");
 		configInput(CURVE_INPUT, "Curve IN");
 		configInput(TIME1_INPUT, "First Width IN");
@@ -158,18 +160,20 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
         // Read inputs and parameters...
         float slant = params[SLANT_PARAM].getValue();
         float curve = params[CURVE_PARAM].getValue();
+		//float secret = params[SECRET_PARAM].getValue();  //Get our tuning parameter here
+
              
         time_x[0] = params[TIME1_PARAM].getValue(); //Time interval for the first generator
         time_x[5] = params[TIME6_PARAM].getValue(); //Time interval for the last generator
 
 		if (inputs[SLANT_INPUT].isConnected())
-			slant += inputs[SLANT_INPUT].getVoltage()*params[SLANT_ATTEN_PARAM].getValue();
+			slant += inputs[SLANT_INPUT].getVoltage()*params[SLANT_ATTEN_PARAM].getValue()*0.2; //scaled so 10V envelope spans the whole range
 		if (inputs[CURVE_INPUT].isConnected())
-			curve += inputs[CURVE_INPUT].getVoltage()*params[CURVE_ATTEN_PARAM].getValue();
+			curve += inputs[CURVE_INPUT].getVoltage()*params[CURVE_ATTEN_PARAM].getValue()*0.2;
 		if (inputs[TIME1_INPUT].isConnected())
-			time_x[0] += inputs[TIME1_INPUT].getVoltage()*params[TIME1_ATTEN_PARAM].getValue()*0.25;
+			time_x[0] += inputs[TIME1_INPUT].getVoltage()*params[TIME1_ATTEN_PARAM].getValue()*0.1;
 		if (inputs[TIME6_INPUT].isConnected())
-			time_x[5] += inputs[TIME6_INPUT].getVoltage()*params[TIME6_ATTEN_PARAM].getValue()*0.25;
+			time_x[5] += inputs[TIME6_INPUT].getVoltage()*params[TIME6_ATTEN_PARAM].getValue()*0.1;
  
 		// Clamp the curve and slant values after adding voltages
 		slant = clamp(slant, -1.0f, 1.0f); 
@@ -177,22 +181,23 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 		time_x[0] = clamp(time_x[0], 0.0f, 1.0f);
 		time_x[5] = clamp(time_x[5], 0.0f, 1.0f);
 
-		time_x[0]*=1.05f; //extend the knob range by 50%, this way there is overlap between range sets
+		time_x[0]*=1.05f; //extend the knob range by 5%, this way there is overlap between range sets
 		time_x[5]*=1.05f;
 
 		//Scale the time_x inputs to compensate for the increase in cycle time for different slants.
-		float slant_scalefactor = 2.5;
+		float slant_scalefactor = 4.8;  //hand-calibrated
 		time_x[0] = time_x[0]-abs(slant)/slant_scalefactor ;
 		time_x[5] = time_x[5]-abs(slant)/slant_scalefactor ;
 
 		//Scale the time_x inputs to compensate for the increase in cycle time for different curve values.
 		//For large curve values the slant compensation needs to be readjusted again
-		float curve_scalefactor = 5;
-		float curve_scalefactor2 = 2.5;
-		float slant_scalefactor2 = 0.5;
+		float curve_scalefactor = 4.6;
+		float curve_scalefactor2 = 2.85;
+		float slant_scalefactor1 = .45;
+		float slant_scalefactor2 = .4;
 		if (curve<0) {  //this is split into two parts because the log side of curve can scale further
-			time_x[0] = time_x[0]-(abs(curve)/curve_scalefactor)*(1 - (abs(slant)*slant_scalefactor2) );
-			time_x[5] = time_x[5]-(abs(curve)/curve_scalefactor)*(1 - (abs(slant)*slant_scalefactor2) );
+			time_x[0] = time_x[0]-(abs(curve)/curve_scalefactor)*(1 - (abs(slant)*slant_scalefactor1) );
+			time_x[5] = time_x[5]-(abs(curve)/curve_scalefactor)*(1 - (abs(slant)*slant_scalefactor1) );
 		} else {
 			time_x[0] = time_x[0]-(abs(curve)/curve_scalefactor2)*(1 - (abs(slant)*slant_scalefactor2) );
 			time_x[5] = time_x[5]-(abs(curve)/curve_scalefactor2)*(1 - (abs(slant)*slant_scalefactor2) );
@@ -202,7 +207,7 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 		time_x[0] = std::max(time_x[0], 0.0f);
 		time_x[5] = std::max(time_x[5], 0.0f);
 
-		//Adjust slant to be 0-1V range, for the shapeDelta function.
+		//Adjust slant to be 0-1V range, for the Envelope function.
 		slant = (slant+1.0f)/2; 
 
 		// Calculate the step size between each time_x value
@@ -264,6 +269,7 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 
 
 			float_4 param_rise  = time_x[part] * (slant) * 10.0f;
+			
 			float_4 param_fall  = time_x[part] * (1.0f - slant) * 10.0f;
 			float_4 param_trig  = 0.0f;
 			float_4 param_cycle = 0.0f;
@@ -309,18 +315,18 @@ dsp::TSchmittTrigger<float_4> trigger_4[6][4];
 				float_4 delta_lt_0 = delta < 0.f;
 				float_4 delta_eq_0 = ~(delta_lt_0 | delta_gt_0);
 
-				float_4 rising  = simd::ifelse(delta_gt_0, (in[c / 4] - out[part][c / 4]) > 1e-3f, float_4::zero());
-				float_4 falling = simd::ifelse(delta_lt_0, (in[c / 4] - out[part][c / 4]) < -1e-3f, float_4::zero());
+				float_4 rising  = simd::ifelse(delta_gt_0, (in[c / 4] - out[part][c / 4]) > 1e-6f, float_4::zero());
+				float_4 falling = simd::ifelse(delta_lt_0, (in[c / 4] - out[part][c / 4]) < -1e-6f, float_4::zero());
 				float_4 end_of_cycle = simd::andnot(falling, delta_lt_0);
 
 				float_4 rateCV = ifelse(delta_gt_0, riseCV[c / 4], 0.f);
 				rateCV = ifelse(delta_lt_0, fallCV[c / 4], rateCV);
-				rateCV = clamp(rateCV, 0.f, 50.0f);
+				rateCV = clamp(rateCV, 0.f, 1e9f);
 
 				float_4 rate = minTime * simd::pow(2.0f, rateCV);
 				
 				//Compute the change in output value
-				out[part][c / 4] += shapeDelta(delta, rate, curve) * args.sampleTime;  
+				out[part][c / 4] += Envelope(delta, rate, curve) * args.sampleTime;  
 
 				// Clamp the output to ensure it stays between 0 and 10.0V
 				out[part][c / 4] = simd::clamp(out[part][c / 4], simd::float_4(0.0f), simd::float_4(10.0f));
@@ -370,6 +376,9 @@ struct EnvelopeArrayWidget : ModuleWidget {
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(65.323, 28.738)), module, EnvelopeArray::TIME6_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(29.337, 41.795)), module, EnvelopeArray::SLANT_ATTEN_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(47.525, 41.795)), module, EnvelopeArray::CURVE_ATTEN_PARAM));
+
+//		addParam(createParamCentered<Trimpot>(mm2px(Vec(38.277, 45)), module, EnvelopeArray::SECRET_PARAM));
+
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(11.228, 45.315)), module, EnvelopeArray::TIME1_ATTEN_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(65.323, 45.315)), module, EnvelopeArray::TIME6_ATTEN_PARAM));
 
