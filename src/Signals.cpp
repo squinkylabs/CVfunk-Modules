@@ -3,14 +3,15 @@
 
 using namespace rack;
 
-const int MAX_BUFFER_SIZE = 44100; // 1 second buffer at 44.1kHz
-
+float MAX_TIME = 10.0f; //Max window time in seconds
+const int MAX_BUFFER_SIZE = (44100*MAX_TIME); // compute buffer size
 
 
 struct Signals : Module {
     enum ParamId {
         RANGE_PARAM,
 		TRIGGER_ON_PARAM,
+		RANGE_BUTTON_PARAM,
         NUM_PARAMS
     };
     enum InputId {
@@ -22,24 +23,29 @@ struct Signals : Module {
     };
     enum LightId {
 		TRIGGER_ON_LIGHT,
+		LONG_LIGHT,
         NUM_LIGHTS
     };
 
+	//Declare global variables
+
+	float currentTimeSetting = 1.0f;
     std::array<std::vector<float>, 6> envelopeBuffers;
     std::array<int, 6> writeIndices = {}; // Track the current write position for each buffer
 	float lastInputs[5]={};
 
     std::array<bool, 6> bufferCycledFlags = {false}; // Flags to indicate when each buffer has been cycled through
-
 	std::array<float, 6> lastTriggerTime; // Time since the last trigger for each channel
-	bool retriggerEnabled = false; // Default state
+	bool retriggerEnabled = true; // Default state
 	bool retriggerToggleProcessed = false;
 	float forceRetriggerFlags[5]={};
+
 
     Signals() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         configParam(RANGE_PARAM, 0.0f, 1.0f, 0.5f, "Range");
         configParam(TRIGGER_ON_PARAM, 0.f, 1.f, 1.f, "Retriggering"); // Toggle button
+        configParam(RANGE_BUTTON_PARAM, 0.f, 1.f, 0.f, "Range Mode"); // Switch
 
         lastTriggerTime.fill(0.0f); // Initialize the trigger timers
 
@@ -52,7 +58,7 @@ void process(const ProcessArgs& args) override {
     
     
 		float range = params[RANGE_PARAM].getValue(); // Range knob value [0, 1]
-		range = clamp(range, 0.000001f, 1.0f); 
+		range = clamp(range, 0.000001f, .9999f); //avoid artifact at end of range
 
 		for (int i = 0; i < NUM_INPUTS; ++i) {
 			if (inputs[i].isConnected()) {
@@ -72,7 +78,7 @@ void process(const ProcessArgs& args) override {
 				// Check for retrigger condition only if retriggering is enabled
 				if (retriggerEnabled && inputVoltage > 1.0f 
 					&& lastInputs[i] <= 1.0f 
-					&& lastTriggerTime[i] >= (range*.82f + .01f) ) {
+					&& lastTriggerTime[i] >= (range*.82f*currentTimeSetting + .01f) ) {
 					
 					//	std::fill(envelopeBuffers[i].begin(), envelopeBuffers[i].end(), 0.0f);
 						writeIndices[i] = 0;
@@ -81,7 +87,7 @@ void process(const ProcessArgs& args) override {
 				} else {
 					// Continue writing to buffer if not triggered or if retriggering is disabled
 					envelopeBuffers[i][writeIndices[i]] = inputVoltage;
-					writeIndices[i] = (writeIndices[i] + 1) % MAX_BUFFER_SIZE;
+					writeIndices[i] = (writeIndices[i] + 1) % int((MAX_BUFFER_SIZE/MAX_TIME)*currentTimeSetting);
 				}
 
 				lastInputs[i] = inputVoltage;
@@ -93,34 +99,42 @@ void process(const ProcessArgs& args) override {
 				lastTriggerTime[i] = 0.0f; // Reset the timer
 			}
 			// If the input is not connected and last input is already 0, do nothing
+		}//for(int i=0...
+
+		// Toggle retriggerEnabled state when the button is pressed
+		if (params[TRIGGER_ON_PARAM].getValue() > 0.5f && !retriggerToggleProcessed) {
+			retriggerEnabled = !retriggerEnabled;
+			retriggerToggleProcessed = true; // Mark that we've processed this toggle
+			params[TRIGGER_ON_PARAM].setValue(0.0f); // Reset the button's parameter value to simulate a latch
+
+			// If retriggering is now disabled, sync all channels
+			if (!retriggerEnabled) {
+				for (int i = 0; i < NUM_INPUTS; ++i) {
+					std::fill(envelopeBuffers[i].begin(), envelopeBuffers[i].end(), 0.0f);
+					writeIndices[i] = 0;
+					lastTriggerTime[i] = 0.0f; // Reset the timer for each channel
+				}
+			}
+		} else if (params[TRIGGER_ON_PARAM].getValue() <= 0.5f) {
+			retriggerToggleProcessed = false; // Allow for another toggle when the button is released and pressed again
 		}
+	
+		// Set light brightness based on the toggle state
+		lights[TRIGGER_ON_LIGHT].setBrightness(retriggerEnabled ? 1.0f : 0.0f);
 
+		//Set the Time Range by switch
+		if (params[RANGE_BUTTON_PARAM].getValue()>0.5) {
+			currentTimeSetting = MAX_TIME;
+			lights[LONG_LIGHT].setBrightness( 1.0f );
+			
+		} else {
+			currentTimeSetting = 1.0f;
+			lights[LONG_LIGHT].setBrightness( 0.0f );
 
-
-     // Toggle retriggerEnabled state when the button is pressed
-    if (params[TRIGGER_ON_PARAM].getValue() > 0.5f && !retriggerToggleProcessed) {
-        retriggerEnabled = !retriggerEnabled;
-        retriggerToggleProcessed = true; // Mark that we've processed this toggle
-        params[TRIGGER_ON_PARAM].setValue(0.0f); // Reset the button's parameter value to simulate a latch
-
-        // If retriggering is now disabled, sync all channels
-        if (!retriggerEnabled) {
-            for (int i = 0; i < NUM_INPUTS; ++i) {
-                std::fill(envelopeBuffers[i].begin(), envelopeBuffers[i].end(), 0.0f);
-                writeIndices[i] = 0;
-                lastTriggerTime[i] = 0.0f; // Reset the timer for each channel
-            }
-        }
-    } else if (params[TRIGGER_ON_PARAM].getValue() <= 0.5f) {
-        retriggerToggleProcessed = false; // Allow for another toggle when the button is released and pressed again
-    }
-    
-    // Set light brightness based on the toggle state
-    lights[TRIGGER_ON_LIGHT].setBrightness(retriggerEnabled ? 1.0f : 0.0f);
-
+		}
 		
-	}
-};
+	}//void
+};//module
 
 struct WaveformDisplay : TransparentWidget {
     Signals* module;
@@ -136,11 +150,12 @@ struct WaveformDisplay : TransparentWidget {
         nvgFill(args.vg);
     }
 
+
 void drawWaveform(const DrawArgs& args) {
     if (!module) return;
 
     const auto& buffer = module->envelopeBuffers[channelId];
-    float range = module->params[Signals::RANGE_PARAM].getValue(); // Get the range value
+    float range = (module->params[Signals::RANGE_PARAM].getValue())/(MAX_TIME/module->currentTimeSetting);
 
     // Use a fixed number of samples to display
     int displaySamples = 1024;
@@ -180,8 +195,16 @@ void drawWaveform(const DrawArgs& args) {
     nvgStrokeWidth(args.vg, 0.5*range +1.5);
     nvgStrokeColor(args.vg, waveformColor);
 
-    // Move to the first point (0, box.size.y), which is the origin
-    nvgMoveTo(args.vg, points[0].x, points[0].y);
+ 	//This codeblock makes the left edge of trigger-synced decay envelopes look solid
+	if (module->retriggerEnabled) {
+		// When retriggering is enabled, start from the origin
+		nvgMoveTo(args.vg, 0, box.size.y); // Move to the origin (bottom left corner)
+	} else {
+		// When retriggering is disabled, start from the first actual data point
+		if (!points.empty()) {
+			nvgMoveTo(args.vg, points[0].x, points[0].y); // Move to the first data point
+		}
+	}
 
     // Draw line segments through all points
     for (size_t i = 1; i < points.size(); ++i) {
@@ -189,16 +212,14 @@ void drawWaveform(const DrawArgs& args) {
     }
 
     nvgStroke(args.vg);
-}
-
-
-
+    }
 
     void draw(const DrawArgs& args) override {
-     //   drawBackground(args);
         drawWaveform(args);
     }
 };
+
+
 
 
 struct SignalsWidget : ModuleWidget {
@@ -215,15 +236,14 @@ struct SignalsWidget : ModuleWidget {
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-
-
         // Range knob
         addParam(createParam<RoundBlackKnob>(mm2px(Vec(5, 14)), module, Signals::RANGE_PARAM));
 
+		addParam(createParam<CKSS>(mm2px(Vec(22, 17)), module, Signals::RANGE_BUTTON_PARAM));
+        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(28, 19)), module, Signals::LONG_LIGHT));
+
         addParam(createParamCentered<TL1105>(mm2px(Vec(38, 19)), module, Signals::TRIGGER_ON_PARAM));
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(44, 19)), module, Signals::TRIGGER_ON_LIGHT));
-
-
 
 		NVGcolor colors[6] = {
 			nvgRGB(0xa0, 0xa0, 0xa0), // Even Lighter Grey
@@ -252,5 +272,4 @@ struct SignalsWidget : ModuleWidget {
     }
     
 };
-
 Model* modelSignals = createModel<Signals, SignalsWidget>("Signals");
