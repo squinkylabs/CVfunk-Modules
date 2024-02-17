@@ -255,8 +255,8 @@ struct SignalsWidget : ModuleWidget {
         setModule(module);
               
         setPanel(createPanel(
-			asset::plugin(pluginInstance, "res/Signals2.svg"),
-			asset::plugin(pluginInstance, "res/Signals-Dark2.svg")
+			asset::plugin(pluginInstance, "res/Signals.svg"),
+			asset::plugin(pluginInstance, "res/Signals-Dark.svg")
 		));
 
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
