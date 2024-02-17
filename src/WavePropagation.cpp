@@ -11,7 +11,76 @@
 
 #include "plugin.hpp"
 
+// These seem to be included already, but might as well do it again.
+#include <tuple>
+#include <map>
+
 // At start of testing, at 16X sample rate. WavePropagation is taking about 16% CPU
+// replacing std::set with something that's non-blocking: maybe made it worse at 17%?
+
+
+// I made this dumb thing to use instead of std::set.
+// std::set will cause memory allocations and potential spikes if called from
+// the audio processing thread.
+class SetSubstitute {
+public:
+	// started to make a real iterator - too much work.
+	// class iterator {
+	// public:
+ 	// 	using iterator_category = std::forward_iterator_tag;
+    // 	using difference_type   = std::ptrdiff_t;
+    // 	using value_type        = int;
+    // 	using pointer           = int*;  // or also value_type*
+    // 	using reference         = int&;  // or also value_type&
+
+	// 	reference operator*() const;
+    // //	pointer operator->();
+
+
+	// 	iterator operator++();
+	// 	friend bool operator!= (const iterator& a, const iterator& b); 
+	// private:
+	// };
+	// iterator begin();
+	// iterator end();
+
+	void insert(int index) {
+		assert(index < maxSize);
+		if (index < maxSize) {
+			entries[index] = true;
+		}
+	}
+	void erase(int index) {
+		assert(index < maxSize);
+		if (index < maxSize) {
+			entries[index] = false;
+		}
+	}
+
+	// Replacing iterators with dumb array index style "iteration".
+	bool get(unsigned int index) const {
+		if (index < maxSize) {
+			return entries[index];
+		} else {
+			INFO("index = %d max=%d", index, maxSize);
+			assert(false);
+			return false;
+		}
+	}
+
+	int max() const {
+		return maxSize;
+	}
+
+	SetSubstitute() {
+		for (int i=0; i<maxSize; ++i) {
+			entries[i] = false;
+		}
+	}
+private:
+	const static int maxSize = 24;
+	bool entries[maxSize];
+};
 
 struct WavePropagation : Module {
 	enum ParamId {
@@ -72,7 +141,8 @@ struct WavePropagation : Module {
     float groupElapsedTime[24] = {}; // Elapsed time since the last activation for each light group
 
 	// Active nodes management
-	std::set<int> activeNodes; // Holds all currently active nodes
+	//std::set<int> activeNodes; // Holds all currently active nodes
+	SetSubstitute activeNodes;// Holds all currently active nodes
 
 	//Keep track of input states so that we can avoid retriggering on gates
     bool previousInputState = false; 
@@ -81,7 +151,7 @@ struct WavePropagation : Module {
 	float inputAboveThresholdTime = 0.0f; // Time in seconds
 
 	// Define groups of lights
-	std::vector<std::vector<LightId>> lightGroups = {
+	const std::vector<std::vector<LightId>> lightGroups = {
 		{_01OUT_LIGHT, _00A_LIGHT, _00B_LIGHT, _01A_LIGHT},
 		{_02OUT_LIGHT, _01B_LIGHT, _02A_LIGHT, _02C_LIGHT, _02D_LIGHT},
 		{_03OUT_LIGHT, _02B_LIGHT, _03A_LIGHT, _03C_LIGHT, _03D_LIGHT},	
@@ -109,7 +179,7 @@ struct WavePropagation : Module {
 	};
 
 	//Define the node-connected graph structure		
-	std::map<int, std::vector<int>> nodeConnections = {
+	const std::map<int, std::vector<int>> nodeConnections = {
 		{0, {1}},
 		{1, {2, 3}},
 		{2, {4, 6}},
@@ -155,8 +225,8 @@ struct WavePropagation : Module {
 		configOutput(_23_OUTPUT, ""); configOutput(_24_OUTPUT, "");
 	}
 
-    void process(const ProcessArgs& args) override {
-
+	// returns spread, decay
+	std::tuple<float, float> doLagStuff() {
 		//Process inputs to paramaters
 		float decay = params[DECAY_PARAM].getValue();
 		float spread = params[SPREAD_PARAM].getValue();
@@ -170,33 +240,38 @@ struct WavePropagation : Module {
 		if (inputs[DECAY_INPUT].isConnected())
 			decay += inputs[DECAY_INPUT].getVoltage()*0.1*params[DECAY_ATT_PARAM].getValue();
 
-
-
 		// Clamp the param values after adding voltages
 		decay = clamp(decay, 0.00f, 1.0f); 
 		spread = clamp(spread, -1.00f, 1.0f);
 		LAG_x[0] = clamp(LAG_x[0], 0.0f, 1.0f);
-
 
 		// Apply non-linear re-scaling to parameters to make them feel better
 		LAG_x[0] = pow(LAG_x[0], 2); //
 		spread = (spread >= 0 ? 1 : -1) * pow(abs(spread), 4);
 		decay = 1 - pow(1 - decay, 2); 
 
-
 		// Re-Clamp the param values after non-linear scaling
 		decay = clamp(decay, 0.02f, .98f); 
 		spread = clamp(spread, -1.00f, 1.0f);
 		LAG_x[0] = clamp(LAG_x[0], 0.0f, 1.0f);
 
-
 		// Compute time parameters for subsequent nodes
 		for (int i = 1; i < 24; i++) {
 			LAG_x[i] = (1 + spread) * LAG_x[i - 1];
 		}
+		return std::make_tuple(spread, decay);
+	}
 
+    void process(const ProcessArgs& args) override {
+
+		const auto temp = doLagStuff();
+		const float spread = std::get<0>(temp);
+		const float decay = std::get<1>(temp);
+
+		// This set was unused. Even constructing one is bad.
 		// Initialize a set to keep track of nodes that will become active
-		std::set<int> nodesToActivate;
+		//std::set<int> nodesToActivate;
+
 
 		//Set detection threshold based on the spread input		
 		float detect_thresh = 0.9f*(.05f-log(0.5f * spread + 0.55f));
@@ -224,37 +299,44 @@ struct WavePropagation : Module {
 
 
 		// Temporary set for nodes to deactivate
-		std::set<int> nodesToDeactivate;
+		//std::set<int> nodesToDeactivate;
+		SetSubstitute nodesToDeactivate;
 		
 		// Iterate over all active nodes to update their states
-		for (int node : activeNodes) {
-			groupElapsedTime[node] += args.sampleTime; // Increment elapsed time
+		//for (int node : activeNodes) {
+		for (int index = 0; index < activeNodes.max(); ++index) {	
+			if (activeNodes.get(index)) {
+				groupElapsedTime[index] += args.sampleTime; // Increment elapsed time
 
-			float brightness = lights[_01OUT_LIGHT + node].getBrightness(); // Get the brightness of the corresponding light
-	
-			// Check if it's time to deactivate the current node
-			if (groupElapsedTime[node] >= (LAG_x[node]+spread) ) {
-				if (brightness < detect_thresh ){
-					nodesToDeactivate.insert(node); // Schedule for deactivation			
+				float brightness = lights[_01OUT_LIGHT + index].getBrightness(); // Get the brightness of the corresponding light
+		
+				// Check if it's time to deactivate the current node
+				if (groupElapsedTime[index] >= (LAG_x[index]+spread) ) {
+					if (brightness < detect_thresh ){
+						nodesToDeactivate.insert(index); // Schedule for deactivation			
+					}
 				}
 			}
 		}
 		
 		// Deactivate nodes and potentially activate their child nodes
-		for (int node : nodesToDeactivate) {
-			activeNodes.erase(node); // Deactivate the node
-			groupElapsedTime[node] = 0.f; // Reset elapsed time
-				
-			// Check and activate child nodes if they are considered inactive
-			auto children = nodeConnections.find(node);
-			if (children != nodeConnections.end()) {
-				for (int childNode : children->second) {
-					// Check if the child node is considered inactive
-					if (outputs[_01_OUTPUT + childNode].getVoltage() < detect_thresh  ) { 
-						activeNodes.insert(childNode); // Activate the child node
-						groupElapsedTime[childNode] = 0.f; // Reset elapsed time for the child node
-						for (LightId light : lightGroups[childNode]) {
-							lights[light].setBrightness(1.0f); // Turn on lights for the child node's group
+		for (int index = 0; index < nodesToDeactivate.max(); ++index) {
+			if (activeNodes.get(index)) {
+				activeNodes.erase(index); // Deactivate the node
+				groupElapsedTime[index] = 0.f; // Reset elapsed time
+					
+				// Check and activate child nodes if they are considered inactive
+
+				auto children = nodeConnections.find(index);
+				if (children != nodeConnections.end()) {
+					for (int childNode : children->second) {
+						// Check if the child node is considered inactive
+						if (outputs[_01_OUTPUT + childNode].getVoltage() < detect_thresh  ) { 
+							activeNodes.insert(childNode); // Activate the child node
+							groupElapsedTime[childNode] = 0.f; // Reset elapsed time for the child node
+							for (LightId light : lightGroups[childNode]) {
+								lights[light].setBrightness(1.0f); // Turn on lights for the child node's group
+							}
 						}
 					}
 				}
@@ -282,16 +364,17 @@ struct WavePropagation : Module {
 		} 
   
 		// Iterate over all possible nodes
-		for (int node = 0; node < 24; ++node) { 
+		for (int nodeIndex = 0; nodeIndex < 24; ++nodeIndex) { 
 			// Check if the node is active
-			if (activeNodes.find(node) != activeNodes.end()) {
+			if (activeNodes.get(nodeIndex)) {
+			//if (activeNodes.find(node) != activeNodes.end()) {
 				// Retrieve the voltage for the current node's output
-				float voltage = outputs[_01_OUTPUT + node].getVoltage(); 
+				float voltage = outputs[_01_OUTPUT + nodeIndex].getVoltage(); 
 
 				// Check if the output voltage is low
 				if (voltage < 0.001f) {
 					// Deactivate the node by removing it from the active set
-					activeNodes.erase(node);
+					activeNodes.erase(nodeIndex);
 
 				 }
 			}
