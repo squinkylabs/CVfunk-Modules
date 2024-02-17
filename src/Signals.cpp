@@ -12,6 +12,9 @@
 #include "plugin.hpp"
 #include "rack.hpp"
 
+#include <array>
+#include <vector>
+
 using namespace rack;
 
 float MAX_TIME = 10.0f; //Max window time in seconds
