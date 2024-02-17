@@ -11,6 +11,8 @@
 
 #include "plugin.hpp"
 
+// At start of testing, at 16X sample rate. WavePropagation is taking about 16% CPU
+
 struct WavePropagation : Module {
 	enum ParamId {
 		LAG_PARAM,
@@ -267,7 +269,7 @@ struct WavePropagation : Module {
 		}
 			
 		// Dim lights slowly for each light group
-		for (int groupIndex = 0; groupIndex < lightGroups.size(); ++groupIndex) {
+		for (int groupIndex = 0; groupIndex < int(lightGroups.size()); ++groupIndex) {
 			// Calculate the dimming factor for the current group
 			float dimmingFactor = decay + ((1.0f - decay) * (spread * 0.7f) ) * (groupIndex / 23.f);
 		

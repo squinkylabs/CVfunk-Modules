@@ -9,9 +9,10 @@
 //
 ////////////////////////////////////////////////////////////
 
-
 #include "plugin.hpp"
-#include "dsp/filter.hpp" 
+
+// What is this? There is no such file.
+//#include "dsp/filter.hpp" 
 
 struct PentaSequencer : Module {
 
@@ -153,7 +154,7 @@ struct PentaSequencer : Module {
 		int STAR_CCW_map[5] =  {0, 2, 4, 1, 3}; 
 
 
-		int* currentMapping;
+		int* currentMapping = nullptr;	// get rid of compiler warning. And it's a good thing anyway.
         int* newMapping = nullptr;  // Pointer to hold the new mapping based on the current mode
 
 		// Determine the new mapping based on the mode
