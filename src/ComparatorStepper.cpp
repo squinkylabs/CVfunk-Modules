@@ -1,3 +1,15 @@
+////////////////////////////////////////////////////////////
+//
+//   Comparator Stepper
+//
+//   written by Cody Geary
+//   Copyright 2024, MIT License
+//
+//   A window comparator with step interval sequencer
+//
+////////////////////////////////////////////////////////////
+
+
 #include "plugin.hpp"
 
 struct ComparatorStepper : Module {
@@ -59,19 +71,19 @@ struct ComparatorStepper : Module {
 
 	ComparatorStepper() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(BIAS_PARAM, -5.f, 5.f, 1.f, "");
-		configParam(RANGE_PARAM, 0.f, 10.f, 3.f, "");
-		configParam(STEP_PARAM, -1.f, 1.f, 0.41666666f, "");
-		configInput(COMPARATOR_INPUT, "");
-		configInput(BIAS_INPUT, "");
-		configInput(RANGE_INPUT, "");
-		configInput(INVERT_INPUT, "");
-		configInput(STEP_INPUT, "");
-		configInput(TRIGGER_INPUT, "");
-		configInput(RESET_INPUT, "");
-		configOutput(COMPARATOR_UP_OUTPUT, "");
-		configOutput(COMPARATOR_DN_OUTPUT, "");
-		configOutput(STEPPER_OUTPUT, "");
+		configParam(BIAS_PARAM, -5.f, 5.f, 1.f, "Bias");
+		configParam(RANGE_PARAM, 0.f, 10.f, 3.f, "Range");
+		configParam(STEP_PARAM, -1.f, 1.f, 0.41666666f, "Step Size");
+		configInput(COMPARATOR_INPUT, "Comparator IN");
+		configInput(BIAS_INPUT, "Bias IN");
+		configInput(RANGE_INPUT, "Range IN");
+		configInput(INVERT_INPUT, "Invert Gate IN");
+		configInput(STEP_INPUT, "Step Size IN");
+		configInput(TRIGGER_INPUT, "Trigger IN");
+		configInput(RESET_INPUT, "Reset IN");
+		configOutput(COMPARATOR_UP_OUTPUT, "Comparator Above OUT");
+		configOutput(COMPARATOR_DN_OUTPUT, "Comparator Below OUT");
+		configOutput(STEPPER_OUTPUT, "Stepper OUT");
         // Initialize step_mix with the bias value
         step_mix = params[BIAS_PARAM].getValue() + inputs[BIAS_INPUT].getVoltage();
         

@@ -1,19 +1,30 @@
+////////////////////////////////////////////////////////////
+//
+//   Wave Propagation
+//
+//   written by Cody Geary
+//   Copyright 2024, MIT License
+//
+//   Decay envelopes propagate across a network of 24 nodes
+//
+////////////////////////////////////////////////////////////
+
 #include "plugin.hpp"
 
 struct WavePropagation : Module {
 	enum ParamId {
-		TIME_PARAM,
+		LAG_PARAM,
 		DECAY_PARAM,
 		SPREAD_PARAM,
-		ATT1_PARAM,  // Attenuverter for TIME_PARAM
-        ATT2_PARAM,  // Attenuverter for DECAY_PARAM
-        ATT3_PARAM,  // Attenuverter for SPREAD_PARAM
+		LAG_ATT_PARAM,  // Attenuverter for LAG_PARAM
+        SPREAD_ATT_PARAM,  // Attenuverter for DECAY_PARAM
+        DECAY_ATT_PARAM,  // Attenuverter for SPREAD_PARAM
         TRIGGER_BUTTON,
 		PARAMS_LEN
 	};
 	enum InputId {
 		_00_INPUT,
-		TIME_INPUT,
+		LAG_INPUT,
 		DECAY_INPUT,
 		SPREAD_INPUT,
 		INPUTS_LEN
@@ -55,7 +66,7 @@ struct WavePropagation : Module {
 	};
 	
 	// Define an array to store time variables
-    float time_x[24] = {0.0f}; // Time interval for each light group
+    float LAG_x[24] = {0.0f}; // Time interval for each light group
     float groupElapsedTime[24] = {}; // Elapsed time since the last activation for each light group
 
 	// Active nodes management
@@ -116,18 +127,18 @@ struct WavePropagation : Module {
 	
 	WavePropagation() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(TIME_PARAM, 0.0f, 1.0f, 0.5f, "");
-		configParam(SPREAD_PARAM, -1.0f, 1.f, 0.5f, "");
-		configParam(DECAY_PARAM, 0.0f, 1.0f, 0.5f, "");
+		configParam(LAG_PARAM, 0.0f, 1.0f, 0.1f, "Lag");
+		configParam(SPREAD_PARAM, -1.0f, 1.f, 0.8f, "Spread");
+		configParam(DECAY_PARAM, 0.0f, 1.0f, 0.6f, "Decay");
 		
-		configParam(ATT1_PARAM, -1.0f, 1.0f, 1.0f, "Time Attenuverter");
-		configParam(ATT2_PARAM, -1.0f, 1.0f, 1.0f, "Decay Attenuverter");
-		configParam(ATT3_PARAM, -1.0f, 1.0f, 1.0f, "Spread Attenuverter");
+		configParam(LAG_ATT_PARAM, -1.0f, 1.0f, 1.0f, "Lag Attenuverter");
+		configParam(SPREAD_ATT_PARAM, -1.0f, 1.0f, 1.0f, "Spread Attenuverter");
+		configParam(DECAY_ATT_PARAM, -1.0f, 1.0f, 1.0f, "Decay Attenuverter");
 
-		configInput(_00_INPUT, "");
-		configInput(TIME_INPUT, "");
-		configInput(SPREAD_INPUT, "");
-		configInput(DECAY_INPUT, "");
+		configInput(_00_INPUT, "IN");
+		configInput(LAG_INPUT, "Lag");
+		configInput(SPREAD_INPUT, "Spread");
+		configInput(DECAY_INPUT, "Decay");
 		configOutput(_01_OUTPUT, ""); configOutput(_02_OUTPUT, "");
 		configOutput(_03_OUTPUT, ""); configOutput(_04_OUTPUT, "");
 		configOutput(_05_OUTPUT, ""); configOutput(_06_OUTPUT, "");
@@ -148,23 +159,25 @@ struct WavePropagation : Module {
 		float decay = params[DECAY_PARAM].getValue();
 		float spread = params[SPREAD_PARAM].getValue();
 		 
-		time_x[0] = params[TIME_PARAM].getValue(); //Time interval for the first generator
+		LAG_x[0] = params[LAG_PARAM].getValue(); //Time interval for the first generator
 
-		if (inputs[DECAY_INPUT].isConnected())
-			decay += inputs[DECAY_INPUT].getVoltage()*0.1*params[ATT2_PARAM].getValue();
+		if (inputs[LAG_INPUT].isConnected())
+			LAG_x[0] += inputs[LAG_INPUT].getVoltage()*0.1*params[LAG_ATT_PARAM].getValue();
 		if (inputs[SPREAD_INPUT].isConnected())
-			spread += inputs[SPREAD_INPUT].getVoltage()*0.1*params[ATT3_PARAM].getValue();
-		if (inputs[TIME_INPUT].isConnected())
-			time_x[0] += inputs[TIME_INPUT].getVoltage()*0.1*params[ATT1_PARAM].getValue();
+			spread += inputs[SPREAD_INPUT].getVoltage()*0.1*params[SPREAD_ATT_PARAM].getValue();
+		if (inputs[DECAY_INPUT].isConnected())
+			decay += inputs[DECAY_INPUT].getVoltage()*0.1*params[DECAY_ATT_PARAM].getValue();
+
+
 
 		// Clamp the param values after adding voltages
 		decay = clamp(decay, 0.00f, 1.0f); 
 		spread = clamp(spread, -1.00f, 1.0f);
-		time_x[0] = clamp(time_x[0], 0.0f, 1.0f);
+		LAG_x[0] = clamp(LAG_x[0], 0.0f, 1.0f);
 
 
 		// Apply non-linear re-scaling to parameters to make them feel better
-		time_x[0] = pow(time_x[0], 2); //
+		LAG_x[0] = pow(LAG_x[0], 2); //
 		spread = (spread >= 0 ? 1 : -1) * pow(abs(spread), 4);
 		decay = 1 - pow(1 - decay, 2); 
 
@@ -172,20 +185,20 @@ struct WavePropagation : Module {
 		// Re-Clamp the param values after non-linear scaling
 		decay = clamp(decay, 0.02f, .98f); 
 		spread = clamp(spread, -1.00f, 1.0f);
-		time_x[0] = clamp(time_x[0], 0.0f, 1.0f);
+		LAG_x[0] = clamp(LAG_x[0], 0.0f, 1.0f);
 
 
 		// Compute time parameters for subsequent nodes
 		for (int i = 1; i < 24; i++) {
-			time_x[i] = (1 + spread) * time_x[i - 1];
+			LAG_x[i] = (1 + spread) * LAG_x[i - 1];
 		}
 
 		// Initialize a set to keep track of nodes that will become active
 		std::set<int> nodesToActivate;
 
 		//Set detection threshold based on the spread input		
-		float detect_thresh = 2.0f * (-spread + 1);
-//
+		float detect_thresh = 0.9f*(.05f-log(0.5f * spread + 0.55f));
+		
 		// Detect a rising signal at 1.0f on _00_INPUT or manual trigger button press to potentially activate node 0
 		bool manualTriggerPressed = params[TRIGGER_BUTTON].getValue() > 0.0f;  // Assuming TRIGGER_BUTTON is the ID for your manual trigger button
 		bool currentInputState = (inputs[_00_INPUT].isConnected() && inputs[_00_INPUT].getVoltage() > 1.0f) || manualTriggerPressed;
@@ -206,7 +219,7 @@ struct WavePropagation : Module {
 		if (manualTriggerPressed) {
 			params[TRIGGER_BUTTON].setValue(0.0f);
 		}		
-//
+
 
 		// Temporary set for nodes to deactivate
 		std::set<int> nodesToDeactivate;
@@ -218,7 +231,7 @@ struct WavePropagation : Module {
 			float brightness = lights[_01OUT_LIGHT + node].getBrightness(); // Get the brightness of the corresponding light
 	
 			// Check if it's time to deactivate the current node
-			if (groupElapsedTime[node] >= (time_x[node]+spread) ) {
+			if (groupElapsedTime[node] >= (LAG_x[node]+spread) ) {
 				if (brightness < detect_thresh ){
 					nodesToDeactivate.insert(node); // Schedule for deactivation			
 				}
@@ -312,15 +325,15 @@ struct WavePropagationWidget : ModuleWidget {
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.916, 72.73)), module, WavePropagation::_00_INPUT));
 
         // Attenuverter Knobs
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(11.064, 35.728)), module, WavePropagation::ATT1_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(29.756, 35.728)), module, WavePropagation::ATT2_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(48.449, 35.728)), module, WavePropagation::ATT3_PARAM));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(11.064, 35.728)), module, WavePropagation::LAG_ATT_PARAM));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(29.756, 35.728)), module, WavePropagation::SPREAD_ATT_PARAM));
+        addParam(createParamCentered<Trimpot>(mm2px(Vec(48.449, 35.728)), module, WavePropagation::DECAY_ATT_PARAM));
 
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.957, 24)), module, WavePropagation::TIME_PARAM));
+		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(10.957, 24)), module, WavePropagation::LAG_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(29.649, 24)), module, WavePropagation::SPREAD_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(48.342, 24)), module, WavePropagation::DECAY_PARAM));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(11.171, 45.049)), module, WavePropagation::TIME_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(11.171, 45.049)), module, WavePropagation::LAG_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(29.864, 45.049)), module, WavePropagation::SPREAD_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(48.556, 45.049)), module, WavePropagation::DECAY_INPUT));
 

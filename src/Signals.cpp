@@ -1,3 +1,14 @@
+////////////////////////////////////////////////////////////
+//
+//   Signals
+//
+//   written by Cody Geary
+//   Copyright 2024, MIT License
+//
+//   Displays 6 signals, with pass through
+//
+////////////////////////////////////////////////////////////
+
 #include "plugin.hpp"
 #include "rack.hpp"
 
@@ -19,6 +30,7 @@ struct Signals : Module {
         NUM_INPUTS
     };
     enum OutputId {
+		ENV1_OUTPUT, ENV2_OUTPUT, ENV3_OUTPUT, ENV4_OUTPUT, ENV5_OUTPUT, ENV6_OUTPUT,
         NUM_OUTPUTS
     };
     enum LightId {
@@ -55,9 +67,21 @@ struct Signals : Module {
     }
 
 void process(const ProcessArgs& args) override {
-    
-    
+ 
+     
 		float range = params[RANGE_PARAM].getValue(); // Range knob value [0, 1]
+
+ 
+		//Set the Time Range by switch
+			if (params[RANGE_BUTTON_PARAM].getValue()>0.5) {
+			range *= 0.89;
+				currentTimeSetting = MAX_TIME;
+				lights[LONG_LIGHT].setBrightness( 1.0f );
+			} else {
+				currentTimeSetting = 1.0f;
+				lights[LONG_LIGHT].setBrightness( 0.0f );
+			}
+   
 		range = clamp(range, 0.000001f, .9999f); //avoid artifact at end of range
 
 		for (int i = 0; i < NUM_INPUTS; ++i) {
@@ -78,7 +102,7 @@ void process(const ProcessArgs& args) override {
 				// Check for retrigger condition only if retriggering is enabled
 				if (retriggerEnabled && inputVoltage > 1.0f 
 					&& lastInputs[i] <= 1.0f 
-					&& lastTriggerTime[i] >= (range*.82f*currentTimeSetting + .01f) ) {
+					&& lastTriggerTime[i] >= (range*.99f*currentTimeSetting + .01f) ) {
 					
 					//	std::fill(envelopeBuffers[i].begin(), envelopeBuffers[i].end(), 0.0f);
 						writeIndices[i] = 0;
@@ -122,17 +146,16 @@ void process(const ProcessArgs& args) override {
 		// Set light brightness based on the toggle state
 		lights[TRIGGER_ON_LIGHT].setBrightness(retriggerEnabled ? 1.0f : 0.0f);
 
-		//Set the Time Range by switch
-		if (params[RANGE_BUTTON_PARAM].getValue()>0.5) {
-			currentTimeSetting = MAX_TIME;
-			lights[LONG_LIGHT].setBrightness( 1.0f );
-			
-		} else {
-			currentTimeSetting = 1.0f;
-			lights[LONG_LIGHT].setBrightness( 0.0f );
-
-		}
 		
+		for (int i = 0; i < NUM_INPUTS; ++i) {
+			if (inputs[i].isConnected()) {
+				// Directly pass through the input to the associated output
+				outputs[i].setVoltage(inputs[i].getVoltage());
+			} else {
+				outputs[i].setVoltage(0.0f);
+			}
+		}
+				
 	}//void
 };//module
 
@@ -157,6 +180,11 @@ void drawWaveform(const DrawArgs& args) {
     const auto& buffer = module->envelopeBuffers[channelId];
     float range = (module->params[Signals::RANGE_PARAM].getValue())/(MAX_TIME/module->currentTimeSetting);
 
+	//Adjust the Time Range if switched
+			if (module->params[Signals::RANGE_BUTTON_PARAM].getValue()>0.5) {
+			range *= 0.89;
+			} 
+
     // Use a fixed number of samples to display
     int displaySamples = 1024;
 
@@ -165,7 +193,7 @@ void drawWaveform(const DrawArgs& args) {
     // Calculate the y-coordinate of the first sample
     float firstSampleY;
     if (module->inputs[Signals::ENV1_INPUT + channelId].isConnected() && !buffer.empty()) {
-        firstSampleY = box.size.y * (1.0f - (buffer.front() / 15.0f)); // Use the first sample in the buffer
+        firstSampleY = box.size.y * (1.0f - (buffer.front() / 15.0f)); // Divisor sets Y scaling
     } else {
         firstSampleY = box.size.y; // If input is not connected, set to bottom of the box
     }
@@ -192,7 +220,7 @@ void drawWaveform(const DrawArgs& args) {
     }
 
     nvgBeginPath(args.vg);
-    nvgStrokeWidth(args.vg, 0.5*range +1.5);
+    nvgStrokeWidth(args.vg, 0.5*range +1.5);  //scale pen color a bit thinner for high freq data
     nvgStrokeColor(args.vg, waveformColor);
 
  	//This codeblock makes the left edge of trigger-synced decay envelopes look solid
@@ -227,8 +255,8 @@ struct SignalsWidget : ModuleWidget {
         setModule(module);
               
         setPanel(createPanel(
-			asset::plugin(pluginInstance, "res/Signals.svg"),
-			asset::plugin(pluginInstance, "res/Signals-Dark.svg")
+			asset::plugin(pluginInstance, "res/Signals2.svg"),
+			asset::plugin(pluginInstance, "res/Signals-Dark2.svg")
 		));
 
 		addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
@@ -260,10 +288,12 @@ struct SignalsWidget : ModuleWidget {
 			float yPos = initialYPos + i * spacing; // Adjusted positioning and spacing
 
 			addInput(createInput<PJ301MPort>(Vec(5, yPos+20), module, i));
+			addOutput(createOutput<PJ301MPort>(Vec(150, yPos+20), module, i));
+
 
 			WaveformDisplay* display = new WaveformDisplay(colors[i]);
 			display->box.pos = Vec(40, yPos );
-			display->box.size = Vec(100, 40); // Adjust size if needed
+			display->box.size = Vec(100, 40); 
 			display->module = module;
 			display->channelId = i;
 			addChild(display);

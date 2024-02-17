@@ -1,3 +1,15 @@
+////////////////////////////////////////////////////////////
+//
+//   Penta Sequencer
+//
+//   written by Cody Geary
+//   Copyright 2024, MIT License
+//
+//   A five stage sequencer with five outputs and slew.
+//
+////////////////////////////////////////////////////////////
+
+
 #include "plugin.hpp"
 #include "dsp/filter.hpp" 
 

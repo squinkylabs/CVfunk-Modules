@@ -1,3 +1,15 @@
+////////////////////////////////////////////////////////////
+//
+//   Envelope Array
+//
+//   written by Cody Geary
+//   Copyright 2024, MIT License
+//
+//   Six related envelopes with end of function gates
+//
+////////////////////////////////////////////////////////////
+
+
 #include "plugin.hpp"
 using simd::float_4;
 
@@ -99,10 +111,10 @@ struct EnvelopeArray : Module {
 
 	EnvelopeArray() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(SLANT_PARAM, -1.f, 1.f, 0.f, "Slant");
-		configParam(CURVE_PARAM, -1.f, 1.f, 0.f, "Curve");
+		configParam(SLANT_PARAM, -1.f, 1.f, -.75f, "Slant");
+		configParam(CURVE_PARAM, -1.f, 1.f, -.75f, "Curve");
 		configParam(TIME1_PARAM, 0.0f, 1.0f, 0.4f, "First Width");
-		configParam(TIME6_PARAM, 0.0f, 1.0f, 0.6f, "Last Width");
+		configParam(TIME6_PARAM, 0.0f, 1.0f, 0.75f, "Last Width");
 		configParam(SLANT_ATTEN_PARAM, -1.0f, 1.0f, 0.f, "");
 		configParam(CURVE_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
 		configParam(TIME1_ATTEN_PARAM, -1.f, 1.f, 0.f, "");
