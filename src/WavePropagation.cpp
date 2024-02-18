@@ -17,7 +17,70 @@
 
 // At start of testing, at 16X sample rate. WavePropagation is taking about 16% CPU
 // replacing std::set with something that's non-blocking: maybe made it worse at 17%?
+// turned off lag process - went down to 14% or so. So it's not the bottleneck, but it's not great.
+// take out light only processing, down to 12% (oh, some of that is output voltage).
+// big stuff at bottom 2.6 % (X1 and X2)
+// with X1 and !X2, about 12%
+// with !X1 and X1 3.6%
+// So - X1 takes a long time
+// with both on, but no set smooth brightness it goes way down...
 
+/**
+This code looks quite nice. well done!
+I only found two major things looking around here. The first is that you are adding
+and removing things from a std::set in your process call. This will/may allocate memory
+and creating a priority inversion -> spikes and pops. 
+You've probably read this: https://github.com/squinkylabs/Demo/blob/main/docs/efficient-plugins.md
+Anyway, to work around that I made a dumb little class called SetSubstitute. It's pretty bad,
+but at least it doesn't allocate memory at process time. So you should find a solution.
+
+I'm afraid enough of that that I have never used STL containers in an algorithm, but you certainly can
+if you are careful. I think it's always safe to iterator over them. The two static ones you have are fine -
+I put the "const" keyword in front of them to be sure.
+
+The other thing is just obvious - this is a very complex module that is doing a lot of stuff every process 
+call. Sure you could do some small things to make it a little faster, but....
+
+I would look very carefully at what really needs to be done every single process cycle. I'm not really sure what 
+this module does, but maybe nothing needs to be done every cycle? If you did all that stuff 
+every 4 calls it would still be done more often than every millisecond. Clearly the lights don't need to 
+be updated every cycle, but maybe nothing does. Maybe every 16 process calls would be ok - saving X16 CPU.
+Again, that stuff is mentioned in my ancient paper, linked above.
+
+**/
+
+
+#define _LAG
+#define _X1
+#define _X2
+
+
+class Timing {
+public:
+	void onProcess() { ++_process; print(); }
+	void onErase(){ ++_erase; print(); }
+	void onInsert(){ ++_insert; print(); }
+	void onSetLight(){ ++_light; print(); }
+private:
+	
+	int _process = 0;
+	int _erase = 0;
+	int _insert = 0;
+	int _light = 0;
+	void print() {
+	#if 1
+		static const int _threshold = 41000; 
+		int _ct = 0;
+		if (_process > _ct) {
+			INFO("proc=%d er=%d ins=%d light=%d", _process, _erase, _insert, _light);
+			_ct += _threshold;
+		}
+	#endif
+	}
+ 
+};
+
+Timing timing;
 
 // I made this dumb thing to use instead of std::set.
 // std::set will cause memory allocations and potential spikes if called from
@@ -45,12 +108,14 @@ public:
 	// iterator end();
 
 	void insert(int index) {
+		timing.onInsert();
 		assert(index < maxSize);
 		if (index < maxSize) {
 			entries[index] = true;
 		}
 	}
 	void erase(int index) {
+		timing.onErase();
 		assert(index < maxSize);
 		if (index < maxSize) {
 			entries[index] = false;
@@ -81,6 +146,8 @@ private:
 	const static int maxSize = 24;
 	bool entries[maxSize];
 };
+
+
 
 struct WavePropagation : Module {
 	enum ParamId {
@@ -264,9 +331,15 @@ struct WavePropagation : Module {
 
     void process(const ProcessArgs& args) override {
 
+#ifdef _LAG
 		const auto temp = doLagStuff();
 		const float spread = std::get<0>(temp);
 		const float decay = std::get<1>(temp);
+#else
+		const float spread = 0;
+		const float decay = 0;
+#endif
+	timing.onProcess();
 
 		// This set was unused. Even constructing one is bad.
 		// Initialize a set to keep track of nodes that will become active
@@ -281,6 +354,7 @@ struct WavePropagation : Module {
 		bool currentInputState = (inputs[_00_INPUT].isConnected() && inputs[_00_INPUT].getVoltage() > 1.0f) || manualTriggerPressed;
 
 		if (currentInputState && !previousInputState) {
+			INFO("processing clock trigger");
 			// Check if node 0 is considered inactive based on its output voltage
 			if (outputs[_01_OUTPUT].getVoltage() < detect_thresh) {
 				activeNodes.insert(0);  // Reactivate node 0
@@ -289,8 +363,10 @@ struct WavePropagation : Module {
 					lights[light].setBrightness(1.0f);  // Turn on all lights for node 0's group
 				}
 			}
+			// This can be in here - won't be significant, but....
+			previousInputState = currentInputState;  // Update previous input state
 		}
-		previousInputState = currentInputState;  // Update previous input state
+		
 
 		// Reset the trigger button state after processing to ensure it is ready for the next press
 		if (manualTriggerPressed) {
@@ -313,7 +389,7 @@ struct WavePropagation : Module {
 				// Check if it's time to deactivate the current node
 				if (groupElapsedTime[index] >= (LAG_x[index]+spread) ) {
 					if (brightness < detect_thresh ){
-						nodesToDeactivate.insert(index); // Schedule for deactivation			
+						nodesToDeactivate.insert(index); // Schedule for deactivation		
 					}
 				}
 			}
@@ -322,6 +398,7 @@ struct WavePropagation : Module {
 		// Deactivate nodes and potentially activate their child nodes
 		for (int index = 0; index < nodesToDeactivate.max(); ++index) {
 			if (activeNodes.get(index)) {
+				INFO("deactivating");
 				activeNodes.erase(index); // Deactivate the node
 				groupElapsedTime[index] = 0.f; // Reset elapsed time
 					
@@ -335,6 +412,7 @@ struct WavePropagation : Module {
 							activeNodes.insert(childNode); // Activate the child node
 							groupElapsedTime[childNode] = 0.f; // Reset elapsed time for the child node
 							for (LightId light : lightGroups[childNode]) {
+								timing.onSetLight();
 								lights[light].setBrightness(1.0f); // Turn on lights for the child node's group
 							}
 						}
@@ -344,12 +422,15 @@ struct WavePropagation : Module {
 		}
 
 		// Map OUT light brightness to OUTPUT voltages
+	#if 1
 		for (int i = 0; i < 24; ++i) {
 			// Directly map the light brightness to output voltage
 			float brightness = lights[_01OUT_LIGHT + i].getBrightness(); // Get the brightness of the corresponding light
 			outputs[_01_OUTPUT + i].setVoltage(brightness * 10.0f); // Set the output voltage based on the light brightness
 		}
+	#endif
 			
+#ifdef _X1	// take out this big hunk
 		// Dim lights slowly for each light group
 		for (int groupIndex = 0; groupIndex < int(lightGroups.size()); ++groupIndex) {
 			// Calculate the dimming factor for the current group
@@ -360,9 +441,14 @@ struct WavePropagation : Module {
 				float how_bright = lights[lightId].getBrightness();
 				how_bright *= dimmingFactor; 
 				lights[lightId].setSmoothBrightness(how_bright, args.sampleTime);
+				timing.onSetLight();
+				//lights[lightId].setBrightness(how_bright);
 			}
 		} 
+#endif
+#ifdef _X2
   
+		// Deactivate nodes based on the light index, above
 		// Iterate over all possible nodes
 		for (int nodeIndex = 0; nodeIndex < 24; ++nodeIndex) { 
 			// Check if the node is active
@@ -379,11 +465,14 @@ struct WavePropagation : Module {
 				 }
 			}
 		}
+#endif
 
+#if 1
 		if (inputs[_00_INPUT].isConnected()){
 			float brightness = inputs[_00_INPUT].getVoltage() / 10.0f;
 			lights[_00OUT_LIGHT].setSmoothBrightness(brightness, args.sampleTime);         
-		}		
+		}
+#endif		
 				 									
 	} // void process
 }; //struct
